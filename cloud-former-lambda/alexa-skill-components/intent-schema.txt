@@ -1,0 +1,28 @@
+{
+  "intents": [
+    {
+      "slots": [
+        {
+          "name": "Template",
+          "type": "TEMPLATE_KEYS"
+        }
+      ],
+      "intent": "CloudFormerCreateIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "Template",
+          "type": "TEMPLATE_KEYS"
+        }
+      ],
+      "intent": "CloudFormerDeleteIntent"
+    },
+    {
+      "intent": "CloudFormerListTemplateIntent"
+    },
+    {
+      "intent": "CloudFormerOutputTemplateCountIntent"
+    }
+  ]
+}
