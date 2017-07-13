@@ -59,6 +59,15 @@
         }
       ],
       "intent": "UnknownRequest"
+    },
+    {
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "ExtraClarification"
     }
   ]
 }

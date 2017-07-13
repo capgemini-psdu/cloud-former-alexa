@@ -129,6 +129,10 @@ def delete_instance(number,code):
     else:
         return statement("Incorrect code.")
 
+@ask.intent("ExtraClarification")
+def unknown_request(number):
+    return question("To help Alexa understand what you requested, please state what the number represents. For example, if you have given a two factor authentication code, say 'code', followed by the number itself.").reprompt("Please state your intent, followed by the number you just supplied.")
+
 @ask.intent("UnknownRequest")
 def unknown_request(number,code):
     s3 = boto3.resource('s3')
@@ -206,7 +210,7 @@ def stackformation(number):
             OnFailure='ROLLBACK',
             ClientRequestToken='tokenrequest1'
         )
-        speech_output = "Number test launched."#.format(number)
+        speech_output = "Your stack has been launched."#.format(number)
         print ("Success.")
     except Exception as e:
         print('Stack formation failed.')
@@ -220,7 +224,7 @@ def stackdeletion(number):
             StackName='Cloud-Former',
             ClientRequestToken='tokenrequest2'
         )
-        speech_output = "Number test deleted."
+        speech_output = "Your stack has been deleted."
     except Exception as e:
         print('Stack deletion failed.')
         speech_output = "There has been a problem. The instance was not deleted successfully."
