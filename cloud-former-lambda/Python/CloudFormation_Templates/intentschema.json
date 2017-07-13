@@ -1,0 +1,73 @@
+{
+  "intents": [
+    {
+      "intent": "GetStatus"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "GetDateIntent"
+    },
+    {
+      "intent": "GetTimeIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "code",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "LaunchInstance"
+    },
+    {
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "code",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "TerminateInstance"
+    },
+    {
+      "intent": "RequestInstance"
+    },
+    {
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "code",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "UnknownRequest"
+    },
+    {
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "ExtraClarification"
+    }
+  ]
+}

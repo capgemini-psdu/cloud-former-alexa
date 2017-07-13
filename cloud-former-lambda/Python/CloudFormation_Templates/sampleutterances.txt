@@ -1,0 +1,32 @@
+GetStatus status
+GetStatus current status
+AMAZON.StopIntent no
+AMAZON.StopIntent nope
+AMAZON.StopIntent no thanks
+AMAZON.StopIntent no thank you
+GetDateIntent what is the date
+GetDateIntent what day is today
+GetTimeIntent what is the time
+GetTimeIntent what time is it
+LaunchInstance launch number {number} with code {code}
+LaunchInstance start number {number} with code {code}
+LaunchInstance launch {number} with code {code}
+LaunchInstance start {number} with code {code}
+LaunchInstance start {number} with code {code}
+LaunchInstance launch {number} with code {code}
+LaunchInstance launch stack {number} with code {code}
+LaunchInstance launch instance {number} with code {code}
+LaunchInstance create instance {number} with code {code}
+TerminateInstance terminate number {number} with code {code}
+TerminateInstance stop number {number} with code {code}
+TerminateInstance terminate {number} with code {code}
+TerminateInstance stop {number} with code {code}
+TerminateInstance terminate {number} with code {code}
+TerminateInstance stop {number} with code {code}
+TerminateInstance delete stack {number} with code {code}
+TerminateInstance delete instance {number} with code {code}
+RequestInstance list the instances
+UnknownRequest number {number}
+UnknownRequest code {code}
+UnknownRequest number {number} with code {code}
+ExtraClarification {number}
