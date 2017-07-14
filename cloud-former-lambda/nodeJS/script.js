@@ -3,7 +3,7 @@
 * Currently Supported Features: Create, Delete, List Templates, Template Count and Output to Console (CloudWatch Log)
 *
 * @author rush.soni@capgemini.com
-* @version 1.1
+* @version 1.2
 */
 
 'use strict';
@@ -19,6 +19,33 @@ var Alexa = new require('./node_modules/alexa-sdk');
 
 //Create an object used to access S3
 var s3 = new AWS.S3({apiVersion: '2006-03-01'});
+
+var bucket = "cloudformer-eu-west-1";
+
+//Promise used when checking maps accquired using the AWS SDK
+var mapPromise = new Promise(
+  function(resolve, reject){
+
+    var map = produceKeyUrlMap(bucket, 1000);
+
+    if(map != null && map != {}){
+      resolve(map);
+    }
+    else {
+
+      var errorMsg;
+
+      if(map == {}){
+        errorMsg = "There are no keys in" + bucket;
+      }
+      else if(map == null){
+        errorMsg = "The S3 Bucket you specified doesn't exist."
+      }
+
+      reject(errorMsg);
+    }
+});
+
 
 //Handling of intents from Alexa Skills Kit
 var handlers = {
@@ -67,36 +94,11 @@ var handlers = {
 
     var shortPause = "<break time='1s'/>";
     var speechOutput = 'Here is a list of cloud formation templates available in your S3 bucket' + shortPause;
-    var bucket = "cloudformer-eu-west-1";
 
-    //Nested promise for handling the async call to S3 to get bucket objects.
-    var mapPromise = new Promise(
-      function(resolve, reject){
-
-        var map = produceKeyUrlMap(bucket, 1000);
-
-        if(map != null && map != {}){
-          resolve(map);
-        }
-        else {
-
-          var errorMsg;
-
-          if(map == {}}){
-            errorMsg = "There are no keys in" + bucket;
-          }
-          else if(map == null){
-            errorMsg = "The S3 Bucket you specified doesn't exist."
-          }
-
-          reject(errorMsg);
-        }
-    });
-
-    //Function logic for processing mapPromise.
+    //Function logic for processing mapPromise for Listing maps.
     mapPromise.then(
 
-      // Case where the mapPromise has been sucessfully resolved and map contains objects..
+      // Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
       function(map) {
         //for each object within the bucket output it's description
         for (var key in map) {
@@ -108,12 +110,12 @@ var handlers = {
 
         self.emit(':tell', speechOutput);
       },
-      // Case where the map returns empty
+      // Fail: Case where the map returns empty
       function(errorMsg){
 
         //log error in console and then have alexa emit the message.
         console.error(new Error(errorMsg));
-        self.emit(':tell', errorMsg)
+        self.emit(':tell', errorMsg);
 
       }
     );
@@ -125,24 +127,31 @@ var handlers = {
 
     var self = this;
 
-    // get the map of s3 templates.
-    var cloudformation_template_urls = produceKeyUrlMap("cloudformer-eu-west-1", 1000);
+    //Function logic for processing mapPromise for returning the count of objects in the s3 bucket.
+    mapPromise.then(
 
-    var template_counter = 0;
+      // Case where the mapPromise has been sucessfully resolved and map contains objects..
+      function(map) {
 
-    //for each object within the bucket output it's description
-    for (var key in cloudformation_template_urls) {
-      template_counter += 1;
-    }
+        var template_counter = 0;
 
-    this.emit(':tell', 'Your S3 bucket has ' + template_counter + " cloud formation templates.");
+        //for each object within the bucket output it's description
+        for (var key in map) {
+          template_counter += 1;
+        }
 
-    return;
+        self.emit(':tell', 'Your S3 bucket has ' + template_counter + " cloud formation templates.");
+      },
+      // Case where the map returns empty
+      function(errorMsg){
 
+        //log error in console and then have alexa emit the message.
+        console.error(new Error(errorMsg));
+        self.emit(':tell', errorMsg);
+
+      }
+    );
   }
-
-
-
 }
 
 /*
