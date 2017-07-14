@@ -17,34 +17,37 @@ var Stack = new require('./node_modules/cloudformer-node');
 //Add dependency to Alexa SDK
 var Alexa = new require('./node_modules/alexa-sdk');
 
+//Create an object used to access S3
+var s3 = new AWS.S3({apiVersion: '2006-03-01'});
+
 //Handling of intents from Alexa Skills Kit
 var handlers = {
 
-   //Logic for creating a Stack
-  'CloudFormerCreateIntent': function () {
+  //Logic for creating a Stack
+  'CloudFormerCreateIntent': function() {
 
     //Initialise Stack instance.
     var stackName = 'cloudformer-stack-test';
     var theStack = new Stack(stackName);
 
-      //Create stack from amazon web services
-      theStack.apply('https://s3-eu-west-1.amazonaws.com/cloudformer-eu-west-1/cloudformer_basic_template.json', {
-          Parameters : {},
-          DisableRollback : false,
-          Capabilities : [],
-          NotificationARNs : [],
-          Tags : {
-              Name : stackName
-          },
-      }, console.log);
+    //Create stack from amazon web services
+    theStack.apply('https://s3-eu-west-1.amazonaws.com/cloudformer-eu-west-1/cloudformer_basic_template.json', {
+      Parameters: {},
+      DisableRollback: false,
+      Capabilities: [],
+      NotificationARNs: [],
+      Tags: {
+        Name: stackName
+      },
+    }, console.log);
 
-      this.emit(':tell', "your stack has been created");
-      return;
+    this.emit(':tell', "your stack has been created");
+    return;
 
   },
 
-   //Logic for deleteing Stack
-  'CloudFormerDeleteIntent' : function () {
+  //Logic for deleteing Stack
+  'CloudFormerDeleteIntent': function() {
 
     //Initialise Stack instance.
     var stackName = 'cloudformer-stack-test';
@@ -56,123 +59,85 @@ var handlers = {
     this.emit(':tell', "your stack has been deleted");
   },
 
-   //Logic for listing the available templates
-  'CloudFormerListTemplateIntent' : function () {
+  //Logic for listing the available templates
+  'CloudFormerListTemplateIntent': function() {
 
-    //Create an object used to access S3
-    var s3 = new AWS.S3({apiVersion: '2006-03-01'});
+    //Used to access alexa-sdk for emiting from a Alexa Device
+    var self = this;
 
-    //Pass parameters for getting information from buckets
-    var params = {
-      Bucket : "cloudformer-eu-west-1",
-      MaxKeys : 1000
-    };
+    var shortPause = "<break time='1s'/>";
+    var speechOutput = 'Here is a list of cloud formation templates available in your S3 bucket' + shortPause;
+    var bucket = "cloudformer-eu-west-1";
 
-    //POST a request to aws to list objects in the specified bucket
-    var request = s3.listObjectsV2(params, function (err, data){
+    //Nested promise for handling the async call to S3 to get bucket objects.
+    var mapPromise = new Promise(
+      function(resolve, reject){
 
-      //Get a list of  JSON objects from the bucket
-      if (err) {
-        //an error occured.
-        console.log(err, err.stack); // an error occurred
-      }
-      else{
-        return data;
-      }
+        var map = produceKeyUrlMap(bucket, 1000);
 
+        if(map != null && map != {}){
+          resolve(map);
+        }
+        else {
+
+          var errorMsg;
+
+          if(map == {}}){
+            errorMsg = "There are no keys in" + bucket;
+          }
+          else if(map == null){
+            errorMsg = "The S3 Bucket you specified doesn't exist."
+          }
+
+          reject(errorMsg);
+        }
     });
+
+    //Function logic for processing mapPromise.
+    mapPromise.then(
+
+      // Case where the mapPromise has been sucessfully resolved and map contains objects..
+      function(map) {
+        //for each object within the bucket output it's description
+        for (var key in map) {
+
+          //Trims key removing the file extension
+          speechOutput += key + "; " + map[key].name + shortPause;
+
+        }
+
+        self.emit(':tell', speechOutput);
+      },
+      // Case where the map returns empty
+      function(errorMsg){
+
+        //log error in console and then have alexa emit the message.
+        console.error(new Error(errorMsg));
+        self.emit(':tell', errorMsg)
+
+      }
+    );
+
+    },
+
+  //Logic to output the count of JSON templates within an S3 Bucket
+  'CloudFormerOutputTemplateCountIntent': function() {
 
     var self = this;
 
-    //success response
-    var success_response = request.on('success', function(response){
+    // get the map of s3 templates.
+    var cloudformation_template_urls = produceKeyUrlMap("cloudformer-eu-west-1", 1000);
 
-      //Succesfully located the bucket an it's contents
-      var template_counter = 1;
+    var template_counter = 0;
 
+    //for each object within the bucket output it's description
+    for (var key in cloudformation_template_urls) {
+      template_counter += 1;
+    }
 
-      var shortPause = "<break time='1s'/>";
-      var speechOutput = 'Here is a list of cloud formation templates available in your S3 bucket' + shortPause;
+    this.emit(':tell', 'Your S3 bucket has ' + template_counter + " cloud formation templates.");
 
-
-      //for each object within the bucket output it's description
-      for(var i = 0; i < response.data.Contents.length; i++){
-
-          var bucket_item = response.data.Contents[i];
-
-          if(bucket_item.Key.includes(".json")){
-
-             var cloudformation_template = bucket_item;
-
-             //Trims key removing the file extension
-             var cloudformation_template_name = cloudformation_template.Key.replace(/\.[^/.]+$/, "");
-
-             speechOutput +=  template_counter + "; " + cloudformation_template_name + shortPause;
-
-             template_counter += 1;
-
-          }
-
-      }
-
-      self.emit(':tell', speechOutput);
-
-      return;
-
-    });
-
-  },
-
-   //Logic to output the count of JSON templates within an S3 Bucket
-  'CloudFormerOutputTemplateCountIntent' : function () {
-
-    //Create an object used to access S3
-    var s3 = new AWS.S3({apiVersion: '2006-03-01'});
-
-    //Pass parameters for getting information from buckets
-    var params = {
-      Bucket : "cloudformer-eu-west-1",
-      MaxKeys : 1000
-    };
-
-    //POST a request to aws to list objects in the specified bucket
-    var request = s3.listObjectsV2(params, function (err, data){
-
-      //Get a list of  JSON objects from the bucket
-      if (err) {
-        //an error occured.
-        console.log(err, err.stack); // an error occurred
-      }
-      else{
-        return data;
-      }
-
-    });
-
-    var self = this;
-
-    //success response
-    var success_response = request.on('success', function(response){
-
-      //Succesfully located the bucket an it's contents
-      var template_counter = 0;
-
-      //for each object within the bucket output it's description
-      for(var i = 0; i < response.data.Contents.length; i++){
-
-          var bucket_item = response.data.Contents[i];
-
-          if(bucket_item.Key.includes(".json")){
-             template_counter += 1;
-          }
-
-      }
-
-      self.emit(':tell', 'Your S3 bucket has ' + template_counter + " cloud formation templates.");
-
-      return;
-
-    });
+    return;
 
   }
 
@@ -191,3 +156,66 @@ exports.createCloudHandler = (event, context, callback) => {
       alexa_handler.execute();
 
 };
+
+/*
+* Produces a mapping of  (Integer -> CloudFormation Template URL)
+*/
+function produceKeyUrlMap(bucketName, maxKeyCount){
+
+  var params = {
+    Bucket: bucketName,
+    MaxKeys : maxKeyCount
+  };
+
+  //Counter used to keep track of read in templates.
+  var template_counter = 0;
+
+  var self = this;
+
+  //POST a request to aws to list objects in the specified bucket
+  var request = s3.listObjectsV2(params);
+
+  var promise = request.promise();
+
+  var bucket_list = [];
+
+  return promise.then(
+    //Success: successfully returned response object.
+    function(data){
+      //for each cloudformation template key in the bucket add it to a map.
+      for(var i = 0; i < data.Contents.length; i++){
+
+          var bucket_item = data.Contents[i];
+
+          if(bucket_item.Key.includes(".json")){
+
+            //increment counter for new map address.
+            template_counter++;
+
+             // get the cloud formation key.
+             var cloudformation_template_key = bucket_item.Key;
+
+             //Parameters for GET request for URL associated with the key.
+             var params = {
+               Bucket: 'cloudformer-eu-west-1',
+               Key: cloudformation_template_key
+             };
+
+             //Create a javascript object map to contain
+             bucket_list[template_counter] = {
+               'name': params.Key.replace(/\.[^/.]+$/, ""), //removes extension from file name
+               'url' : s3.getSignedUrl('getObject', params) // gets the signed url.
+             };
+          }
+      }
+      return bucket_list;
+
+    },
+    //Failure: couldn't get a list of objects with the provided parameters.
+    function(error){
+      console.log("The bucket you provided doesn't exist");
+      return null;
+    }
+  );
+
+}
