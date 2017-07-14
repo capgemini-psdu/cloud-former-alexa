@@ -131,7 +131,7 @@ def delete_instance(number,code):
 
 @ask.intent("ExtraClarification")
 def unknown_request(number):
-    return question("To help Alexa understand what you requested, please state what the number represents. For example, if you have given a two factor authentication code, say 'code', followed by the number itself.").reprompt("Please state your intent, followed by the number you just supplied.")
+    return question("To help Alexa understand what you requested, please state what the number represents. For example, if you have given a two factor authentication code, say 'code' followed by the number itself.").reprompt("Please state your intent, followed by the number you just supplied.")
 
 @ask.intent("UnknownRequest")
 def unknown_request(number,code):
@@ -275,4 +275,15 @@ def request_list():
     speech_output = "Function not yet completed."
     return statement(speech_output)
 
+@ask.intent("RequestInstance")
+def request_list():
+    speech_output = "Function not yet completed."
+    return statement(speech_output)
+
+@ask.intent("ListStacks")
+def list_stacks():
+
+
+    speech_output = "Function not yet completed."
+    return statement(speech_output)
 ###

@@ -17,6 +17,10 @@ LaunchInstance launch {number} with code {code}
 LaunchInstance launch stack {number} with code {code}
 LaunchInstance launch instance {number} with code {code}
 LaunchInstance create instance {number} with code {code}
+LaunchInstance launch an instance
+LaunchInstance create a stack
+LaunchInstance create stack
+LaunchInstance create stack {number} with code {code}
 TerminateInstance terminate number {number} with code {code}
 TerminateInstance stop number {number} with code {code}
 TerminateInstance terminate {number} with code {code}
