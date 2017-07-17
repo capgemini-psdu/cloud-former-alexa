@@ -2,10 +2,10 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.1
-#Date: 13/07/2017
-#Changelog: Added basic conversations.
-#Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. COnversations. SMS Verification.
+#Version: 3.2
+#Date: 17/07/2017
+#Changelog: Added basic conversations. Added 2FA timeout.
+#Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification.
 #In-Production: Requesting template information. Advanced Conversations.
 ##
 
@@ -16,11 +16,11 @@ from __future__ import print_function
 import json
 import time
 import boto3
+import botocore
 import botocore.exceptions
 from flask_ask import Ask, statement, question, session, convert_errors
 from flask import Flask, render_template
 from random import randint
-import botocore
 
 print('Loading function')
 
@@ -70,6 +70,12 @@ def launch_instance(number,code):
         s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
 
     if number == None or number == "?":
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("numberrequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
         return question("Please specify which stack you would like to launch. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to launch.")
     else:
         pass
@@ -83,6 +89,12 @@ def launch_instance(number,code):
 
     if code == None:
         security_request()
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("coderequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
         return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
@@ -92,7 +104,7 @@ def launch_instance(number,code):
         response=stackformation(int(number))
         return statement(str(response))
     else:
-        return statement("Incorrect code.")
+        return question("Incorrect code.")
 
 @ask.intent("TerminateInstance")
 def delete_instance(number,code):
@@ -105,6 +117,12 @@ def delete_instance(number,code):
         s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
 
     if number == None  or number == "?":
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("numberrequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
         return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to delete.")
     else:
         pass
@@ -118,6 +136,12 @@ def delete_instance(number,code):
 
     if code == None:
         security_request()
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("coderequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
         return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
@@ -127,19 +151,19 @@ def delete_instance(number,code):
         response=stackdeletion(int(number))
         return statement(str(response))
     else:
-        return statement("Incorrect code.")
-
-@ask.intent("ExtraClarification")
-def unknown_request(number):
-    return question("To help Alexa understand what you requested, please state what the number represents. For example, if you have given a two factor authentication code, say 'code' followed by the number itself.").reprompt("Please state your intent, followed by the number you just supplied.")
+        return question("Incorrect code.")
 
 @ask.intent("UnknownRequest")
 def unknown_request(number,code):
     s3 = boto3.resource('s3')
     BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
     KEY = 'request.txt'
+    KEY2 = 'number.txt'
+    KEY3 = 'unknown.txt'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/request.txt')
+        s3.Bucket(BUCKET_NAME).download_file(KEY2, '/tmp/number.txt')
+        s3.Bucket(BUCKET_NAME).download_file(KEY3, '/tmp/unknown.txt')
     except botocore.exceptions.ClientError as e:
         print("An error has occured.")
         if e.response['Error']['Code'] == "404":
@@ -147,21 +171,22 @@ def unknown_request(number,code):
             return statement("An error has occured. Please check the Alexa configuration.")
         else:
             raise
+
     file=open("/tmp/request.txt","r")
     request=file.read()
 
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
-    KEY2 = 'number.txt'
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY2, '/tmp/number.txt')
-    except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-            return statement("An error has occured. Please check the Alexa configuration.")
-        else:
-            raise
-    file2=open("/tmp/request.txt","r")
+    file2=open("/tmp/number.txt","r")
     requestnumber=file2.read()
+
+    file3=open("/tmp/unknown.txt","r")
+    unknownrequest=file3.read()
+
+    if unknownrequest == "coderequest":
+        code=int(number)
+    elif unknownrequest == "numberrequest":
+        number=int(number)
+    else:
+        pass
 
     if code == None:
         security_request()
@@ -173,12 +198,6 @@ def unknown_request(number,code):
         if requestnumber == None:
             return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to delete.")
         else:
-            # open("/tmp/number.txt","w").close() #clears textfile
-            # file=open("/tmp/number.txt","w")
-            # file.write(number)
-            # file.close()
-            # with open('/tmp/number.txt', 'rb') as data:
-            #     s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
             number=requestnumber
     else:
         pass
@@ -189,14 +208,14 @@ def unknown_request(number,code):
             response=stackformation(number)
             return statement(str(response))
         else:
-            return statement("Incorrect code.")
+            return question("Incorrect code.")
     elif request == "DeleteInstance":
         securitycheck=security_check(int(code))
         if securitycheck == True:
             response=stackdeletion(number)
             return statement(str(response))
         else:
-            return statement("Incorrect code.")
+            return question("Incorrect code.")
     else:
         return statement("An error has occured. Please check the Alexa configuration.")
 
@@ -232,10 +251,11 @@ def stackdeletion(number):
 
 def security_request():
     sns = boto3.client('sns')
+    currenttime=time.time()
     tfacode=str(random_with_N_digits(4))
     open("/tmp/securitycode.txt","w").close()
     file=open("/tmp/securitycode.txt","w")
-    file.write(tfacode)
+    file.write(tfacode+" "+str(currenttime))
     file.close()
     s3 = boto3.client('s3')
     with open('/tmp/securitycode.txt', 'rb') as data:
@@ -258,7 +278,15 @@ def security_check(code):
             raise
 
     file=open("/tmp/securitycode.txt","r")
-    tfacode=file.read()
+    text=file.read()
+    words = text.split(" ")
+    tfacode=words[0]
+    currenttime=words[1]
+
+    if time.time() > float(currenttime)+60:
+        return False
+    else:
+        pass
 
     if int(tfacode)==int(code):
         security=True
