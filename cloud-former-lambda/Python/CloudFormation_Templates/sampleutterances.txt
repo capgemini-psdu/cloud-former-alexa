@@ -8,29 +8,35 @@ GetDateIntent what is the date
 GetDateIntent what day is today
 GetTimeIntent what is the time
 GetTimeIntent what time is it
-LaunchInstance launch number {number} with code {code}
-LaunchInstance start number {number} with code {code}
-LaunchInstance launch {number} with code {code}
-LaunchInstance start {number} with code {code}
-LaunchInstance start {number} with code {code}
-LaunchInstance launch {number} with code {code}
-LaunchInstance launch stack {number} with code {code}
-LaunchInstance launch instance {number} with code {code}
-LaunchInstance create instance {number} with code {code}
+LaunchInstance launch number {number} with code {code} user {user}
+LaunchInstance start number {number} with code {code} user {user}
+LaunchInstance launch {number} with code {code} user {user}
+LaunchInstance start {number} with code {code} user {user}
+LaunchInstance start {number} with code {code} user {user}
+LaunchInstance launch {number} with code {code} user {user}
+LaunchInstance launch stack {number} with code {code} user {user}
+LaunchInstance launch instance {number} with code {code} user {user}
+LaunchInstance create instance {number} with code {code} user {user}
 LaunchInstance launch an instance
 LaunchInstance create a stack
 LaunchInstance create stack
-LaunchInstance create stack {number} with code {code}
-TerminateInstance terminate number {number} with code {code}
-TerminateInstance stop number {number} with code {code}
+LaunchInstance create stack {number} with code {code} user {user}
+TerminateInstance terminate number {number} with code {code} user {user}
+TerminateInstance stop number {number} with code {code} user {user}
+TerminateInstance terminate {number} with code {code} user {user}
+TerminateInstance stop {number} with code {code} user {user}
 TerminateInstance terminate {number} with code {code}
-TerminateInstance stop {number} with code {code}
-TerminateInstance terminate {number} with code {code}
-TerminateInstance stop {number} with code {code}
-TerminateInstance delete stack {number} with code {code}
-TerminateInstance delete instance {number} with code {code}
+TerminateInstance stop {number} with code {code} user {user}
+TerminateInstance delete stack {number} with code {code} user {user}
+TerminateInstance delete instance {number} with code {code} user {user}
 RequestInstance list the instances
 UnknownRequest number {number}
 UnknownRequest code {code}
 UnknownRequest number {number} with code {code}
 UnknownRequest {number}
+UnknownRequest {user}
+UnknownRequest user {user}
+UnknownRequest i am {user}
+UnknownRequest i'm {user}
+UnknownRequest username {user}
+UnknownRequest my name is {user}

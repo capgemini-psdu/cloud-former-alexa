@@ -2,11 +2,11 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.2
-#Date: 17/07/2017
-#Changelog: Added basic conversations. Added 2FA timeout.
+#Version: 3.3
+#Date: 18/07/2017
+#Changelog: Added basic conversations. Added 2FA timeout. Multi-user verification.
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification.
-#In-Production: Requesting template information. Advanced Conversations.
+#In-Production: Requesting template information.
 ##
 
 ##Begin function
@@ -21,11 +21,16 @@ import botocore.exceptions
 from flask_ask import Ask, statement, question, session, convert_errors
 from flask import Flask, render_template
 from random import randint
+import csv
 
 print('Loading function')
 
 app = Flask(__name__)
 ask = Ask(app, '/')
+
+@ask.launch
+def launched():
+    return question('Welcome to Cloud Former')
 
 @ask.intent('AMAZON.StopIntent')
 def stop():
@@ -60,7 +65,7 @@ def random_with_N_digits(n):
     return randint(range_start, range_end)
 
 @ask.intent("LaunchInstance")
-def launch_instance(number,code):
+def launch_instance(number,code,user):
     s3 = boto3.client('s3')
     open("/tmp/request.txt","w").close()
     file=open("/tmp/request.txt","w")
@@ -88,14 +93,27 @@ def launch_instance(number,code):
         s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
 
     if code == None:
-        security_request()
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("coderequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
-        return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
+        if user == None:
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("userrequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            return question("Which user are you?")
+        else:
+            requestcheck=security_request(user)
+            if requestcheck == False:
+                return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
+            else:
+                pass
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("coderequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
 
@@ -107,7 +125,7 @@ def launch_instance(number,code):
         return question("Incorrect code.")
 
 @ask.intent("TerminateInstance")
-def delete_instance(number,code):
+def delete_instance(number,code,user):
     s3 = boto3.client('s3')
     open("/tmp/request.txt","w").close()
     file=open("/tmp/request.txt","w")
@@ -135,14 +153,33 @@ def delete_instance(number,code):
         s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
 
     if code == None:
-        security_request()
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("coderequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
-        return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
+        if user == None:
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("userrequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            return question("Which user are you?")
+        else:
+            open("/tmp/user.txt","w").close()
+            file=open("/tmp/user.txt","w")
+            file.write(user)
+            file.close()
+            with open('/tmp/user.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
+            requestcheck=security_request(user)
+            if requestcheck == False:
+                return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
+            else:
+                pass
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("coderequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
 
@@ -153,8 +190,14 @@ def delete_instance(number,code):
     else:
         return question("Incorrect code.")
 
+#@ask.intent("StackStatus") #in-development
+#def stack_status(name):
+
 @ask.intent("UnknownRequest")
-def unknown_request(number,code):
+def unknown_request(number,code,user):
+    if number == None and code == None and user == None:
+        return question("I'm sorry, I did not understand your request or statement. Please try again.")
+
     s3 = boto3.resource('s3')
     BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
     KEY = 'request.txt'
@@ -181,24 +224,67 @@ def unknown_request(number,code):
     file3=open("/tmp/unknown.txt","r")
     unknownrequest=file3.read()
 
+    s3 = boto3.client('s3')
     if unknownrequest == "coderequest":
         code=int(number)
+        number=None
     elif unknownrequest == "numberrequest":
         number=int(number)
-    else:
-        pass
-
-    if code == None:
-        security_request()
-        return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
+        code=None
+    elif unknownrequest == "userrequest":
+        code=None
+        number=None
+        open("/tmp/user.txt","w").close()
+        file=open("/tmp/user.txt","w")
+        file.write(user)
+        file.close()
+        with open('/tmp/user.txt', 'rb') as data:
+            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
     else:
         pass
 
     if number == None:
         if requestnumber == None:
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("numberrequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
             return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to delete.")
         else:
             number=requestnumber
+    else:
+        pass
+
+    if code == None:
+        if user == None:
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("userrequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            return question("Which user are you?")
+        else:
+            open("/tmp/user.txt","w").close()
+            file=open("/tmp/user.txt","w")
+            file.write(user)
+            file.close()
+            with open('/tmp/user.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
+            requestcheck=security_request(user)
+            if requestcheck == False:
+                return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
+            else:
+                pass
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("coderequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
 
@@ -249,7 +335,38 @@ def stackdeletion(number):
         speech_output = "There has been a problem. The instance was not deleted successfully."
     return speech_output
 
-def security_request():
+def security_request(user):
+    s3 = boto3.resource('s3')
+    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    KEY = 'contacts.csv'
+    try:
+        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/contacts.csv')
+    except botocore.exceptions.ClientError as e:
+        print("An error has occured.")
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            return statement("An error has occured. Please check the Alexa configuration.")
+        else:
+            raise
+
+    found=False
+    with open('/tmp/contacts.csv') as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        for row in readCSV:
+            print(user)
+            print(row[0])
+            compare1=str(user)
+            compare2=str(row[0])
+            if str.lower(compare1)==str.lower(compare2):
+                contactnumber=row[1]
+                print(contactnumber)
+                found=True
+                break
+
+    if found == False:
+        print("Error: User not found.")
+        return False
+
     sns = boto3.client('sns')
     currenttime=time.time()
     tfacode=str(random_with_N_digits(4))
@@ -260,9 +377,8 @@ def security_request():
     s3 = boto3.client('s3')
     with open('/tmp/securitycode.txt', 'rb') as data:
         s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'securitycode.txt')
-    number = "+13078000356" #https://smsreceivefree.com/info/13078000356/ for debugging
-    sns.publish(PhoneNumber = number, Message=str(tfacode) )
-    return question("A security code has been sent to your phone. Please state your intent, followed by that code.").reprompt("Please state your intent, followed by that code.")
+    sns.publish(PhoneNumber = str(contactnumber), Message=str(tfacode) )
+    return True
 
 def security_check(code):
     print("Checking...")
@@ -283,7 +399,7 @@ def security_check(code):
     tfacode=words[0]
     currenttime=words[1]
 
-    if time.time() > float(currenttime)+60:
+    if time.time() > float(currenttime)+90:
         return False
     else:
         pass
@@ -310,6 +426,9 @@ def request_list():
 
 @ask.intent("ListStacks")
 def list_stacks():
+    s3 = boto3.resource('s3')
+    my_bucket = s3.Bucket('some/path/')
+
 
 
     speech_output = "Function not yet completed."

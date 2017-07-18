@@ -27,6 +27,10 @@
         {
           "name": "code",
           "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "user",
+          "type": "user"
         }
       ],
       "intent": "LaunchInstance"
@@ -40,6 +44,10 @@
         {
           "name": "code",
           "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "user",
+          "type": "user"
         }
       ],
       "intent": "TerminateInstance"
@@ -56,6 +64,10 @@
         {
           "name": "code",
           "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "user",
+          "type": "user"
         }
       ],
       "intent": "UnknownRequest"
