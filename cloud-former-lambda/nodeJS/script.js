@@ -1,25 +1,29 @@
 /*
  * Lambda function code for the CloudFormer Amazon Alexa Skill
- * Currently Supported Features: Dynamic Create, Dynamic Delete, List Templates, Template Count and Output to Console (CloudWatch Log)
+ * Currently Supported Features: Dynamic Create, Dynamic Delete, List Templates, Template Count and Status of CloudFormer stacks.
  *
  * @author rush.soni@capgemini.com
- * @version 1.3
+ * @version 1.4
  */
 
 'use strict';
 
 //Add AWS sdk dependency
-var AWS = require('./node_modules/aws-sdk');
+const AWS = require('./node_modules/aws-sdk');
 
 //Add dependency to CloudFormer scripts
-var Stack = new require('./node_modules/cloudformer-node');
+const Stack = new require('./node_modules/cloudformer-node');
 
 //Add dependency to Alexa SDK
-var Alexa = new require('./node_modules/alexa-sdk');
+const Alexa = new require('./node_modules/alexa-sdk');
 
 //Create an object used to access S3
-var s3 = new AWS.S3({
+const s3 = new AWS.S3({
   apiVersion: '2006-03-01'
+});
+
+const cloudFormation = new AWS.CloudFormation({
+  apiVersion: '2010-05-15'
 });
 
 var bucket = "cloudformer-eu-west-1";
@@ -48,7 +52,6 @@ var mapPromise = new Promise(
     }
   });
 
-
 //Handling of intents from Alexa Skills Kit
 var handlers = {
 
@@ -64,44 +67,40 @@ var handlers = {
       function(map) {
 
         //Get the user specified option
-        var option_number = self.event.request.intent.slots.OptionNumber.value;
+        var optionNumber = self.event.request.intent.slots.OptionNumber.value;
 
-        if(map[option_number] != null)
-        {
-          var stackName = map[option_number].name;
+        if (map[optionNumber] != null) {
+
+          var stackName = validateStackName(map[optionNumber].name);
           var theStack = new Stack(stackName);
 
           //Create stack from amazon web services
-          theStack.apply(map[option_number].url, {
+          theStack.apply(map[optionNumber].url, {
             Parameters: {},
             DisableRollback: false,
             Capabilities: [],
             NotificationARNs: [],
             Tags: {
-              Name: stackName
+              Name: "cloudformer:" + map[optionNumber].name
             },
           }, console.log);
 
-          self.emit(':tell', "your stack has been created");
-          return;
+          return self.emit(':tell', "your stack, " + alexaOutputStackName(map[optionNumber].name) + " has been created ");
 
-         }
-         else
-         {
-           console.error("Item not found within the S3 bucket.");
-           self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
-         }
+        } else {
+          console.error("Item not found within the S3 bucket.");
+          return self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
+        }
       },
       // Fail: Case where the map returns empty
       function(errorMsg) {
 
         //log error in console and then have alexa emit the message.
         console.error(errorMsg);
-        self.emit(':tell', errorMsg);
+        return self.emit(':tell', errorMsg);
 
       }
     );
-    return;
   },
 
   //Logic for deleteing Stack
@@ -115,36 +114,32 @@ var handlers = {
       function(map) {
 
         //Get the user specified option
-        var option_number = self.event.request.intent.slots.OptionNumber.value;
+        var optionNumber = self.event.request.intent.slots.OptionNumber.value;
 
-        if(map[option_number] != null)
-        {
-          var stackName = map[option_number].name;
+        if (map[optionNumber] != null) {
+          var stackName = validateStackName(map[optionNumber].name);
+          var alexaOutputStackName = alexaOutputStackName(map[optionNumber].name);
           var theStack = new Stack(stackName);
 
           //Create stack from amazon web services
           theStack.delete(console.log);
 
-          self.emit(':tell', "your stack has been deleted");
-          return;
+          return self.emit(':tell', "your stack, " + alexaOutputStackName + "has been deleted");
 
-         }
-         else
-         {
-           console.error("Cannot find stack with the name " + map[option_number].name + "in the list of running stacks.");
-           self.emit(':tell', "Cannot find stack with the name " + map[option_number].name + "in the list of running stacks.");
-         }
+        } else {
+          console.error("Cannot find stack with the name " + alexaOutputStackName + "in the list of running stacks.");
+          return self.emit(':tell', "Cannot find stack with the name " + alexaOutputStackName + "in the list of running stacks.");
+        }
       },
       // Fail: Case where the map returns empty
       function(errorMsg) {
 
         //log error in console and then have alexa emit the message.
         console.error(errorMsg);
-        self.emit(':tell', errorMsg);
+        return self.emit(':tell', errorMsg);
 
       }
     );
-    return;
   },
 
   //Logic for listing the available templates
@@ -201,6 +196,7 @@ var handlers = {
           template_counter += 1;
         }
 
+
         self.emit(':tell', 'Your S3 bucket has ' + template_counter + " cloud formation templates.");
       },
       // Case where the map returns empty
@@ -212,6 +208,48 @@ var handlers = {
 
       }
     );
+  },
+
+  'CloudFormerStatusIntent': function() {
+
+    var self = this;
+
+    mapPromise.then(
+
+      function(map) {
+
+        getStatus(map).then(
+
+          function(statusMap) {
+
+            if (statusMap.length != 0) {
+              var shortPause = "<break time='1s'/>";
+              var speechOutput = "Here is a list of stacks created by cloud former and their statuses,";
+              var counter = 1;
+
+              for (var stack in statusMap) {
+                  speechOutput += shortPause + counter + shortPause + statusMap[stack].name + shortPause + "Status, " + statusMap[stack].state;
+                  counter++;
+              }
+
+              return self.emit(':tell', speechOutput);
+            }
+            else {
+              return self.emit(':tell', 'There are no stacks running which have been created by cloud former');
+            }
+
+
+          }).catch(function(err) {
+          console.log(err)
+        });
+
+      },
+      function(errorMsg) {
+        console.log(errorMsg);
+      });
+
+
+
   }
 }
 
@@ -257,7 +295,7 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
 
         var bucket_item = data.Contents[i];
 
-        if (bucket_item.Key.includes(".json")) {
+        if (bucket_item.Key.includes(".json") && bucket_item.Key.indexOf('/') == -1) {
 
           //increment counter for new map address.
           template_counter++;
@@ -266,14 +304,15 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
           var cloudformation_template_key = bucket_item.Key;
           var url = "https://s3-" + bucket_region + ".amazonaws.com/" + bucketName + "/" + cloudformation_template_key;
 
+          var stackName = cloudformation_template_key.replace(/\.[^/.]+$/, "");
 
-          //Create a javascript object map to contain
           bucket_list[template_counter] = {
-            'name': cloudformation_template_key.replace(/\.[^/.]+$/, ""), //removes extension from file name
-            'url': url // link.
+            'name': stackName,
+            'url': url
           };
         }
       }
+
       return bucket_list;
 
     },
@@ -283,5 +322,77 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
       return null;
     }
   );
+
+}
+
+/*
+ * Check if the inputed CloudFormation template has been instantiated.
+ */
+function getStatus(map) {
+
+  //TODO get this working
+
+  var params = {
+    StackStatusFilter: ['CREATE_COMPLETE']
+  };
+
+
+  // fetch the list from cloudformation stacks, look at the stackName and compare it to that from the map
+  var promise = cloudFormation.listStacks(params).promise();
+
+  var statusMap = promise.then(
+    function(data) {
+
+      var cloudFormerStacks = [];
+
+      for (var stack in data.StackSummaries) {
+        for (var key in map) {
+          if (data.StackSummaries[stack].StackName == validateStackName(map[key].name)) {
+            cloudFormerStacks.push({
+              'name': replaceAll(data.StackSummaries[stack].StackName, '-', ' '),
+              'state': alexaOutputStackName(data.StackSummaries[stack].StackStatus)
+            });
+          }
+        }
+      }
+
+      return cloudFormerStacks;
+    },
+    function(err) {
+      console.log(err);
+    }
+  ).catch(function(err) {
+    console.log(err);
+  });
+
+  return statusMap;
+
+
+}
+
+/*
+ * Formats cloudformation stack name.
+ */
+function validateStackName(name) {
+  return replaceAll(name, '_', '-');
+}
+
+/*
+ * Formats stack name so that alexa can output it in an acceptable format.
+ */
+function alexaOutputStackName(name) {
+  return replaceAll(name, '_', ' ');
+}
+
+/*
+ * Remove all instances of charToReplace from input string and replaces them with replacementChar.
+ */
+function replaceAll(name, charToReplace, replacementChar) {
+
+  if (name.indexOf(charToReplace) == -1) {
+    return name;
+  }
+
+  return replaceAll(name.replace(charToReplace, replacementChar), charToReplace, replacementChar);
 
 }
