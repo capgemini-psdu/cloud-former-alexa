@@ -39,3 +39,5 @@ Thumbs.db
 # Unneeded Python Packages #
 ############################
 cloud-former-lambda/Python/tempf/venv
+.DS_Store
+cloud-former-lambda/.DS_Store
