@@ -4,6 +4,9 @@ AMAZON.StopIntent no
 AMAZON.StopIntent nope
 AMAZON.StopIntent no thanks
 AMAZON.StopIntent no thank you
+ResetSkill reset the skill
+ResetSkill reset skill
+ResetSkill reset
 GetDateIntent what is the date
 GetDateIntent what day is today
 GetTimeIntent what is the time
@@ -29,7 +32,21 @@ TerminateInstance terminate {number} with code {code}
 TerminateInstance stop {number} with code {code} user {user}
 TerminateInstance delete stack {number} with code {code} user {user}
 TerminateInstance delete instance {number} with code {code} user {user}
+TerminateInstance delete instance
+TerminateInstance delete stack
+TerminateInstance terminate stack
+TerminateInstance terminate instance
 RequestInstance list the instances
+RequestInstance name the instances
+RequestInstance what stacks are available
+RequestInstance list templates
+RequestInstance list stacks
+RequestInstance name instances
+RequestInstance list  instances
+RequestInstance name the templates
+RequestInstance read out the templates
+RequestInstance what templates are available
+RequestInstance list  available templates
 UnknownRequest number {number}
 UnknownRequest code {code}
 UnknownRequest number {number} with code {code}
