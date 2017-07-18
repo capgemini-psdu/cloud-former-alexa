@@ -39,4 +39,4 @@ Thumbs.db
 # Unneeded Python Packages #
 ############################
 cloud-former-lambda/Python/tempf/venv
-cloud-former-lambda\Python\CloudFormation_Templates\contacts.csv
+cloud-former-lambda/Python/CloudFormation_Templates/contacts.csv
