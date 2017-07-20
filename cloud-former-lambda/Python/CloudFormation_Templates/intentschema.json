@@ -1,9 +1,6 @@
 {
   "intents": [
     {
-      "intent": "GetStatus"
-    },
-    {
       "intent": "AMAZON.CancelIntent"
     },
     {
@@ -57,6 +54,18 @@
     },
     {
       "intent": "RequestInstance"
+    },
+    {
+      "intent": "StackStatusAll"
+    },
+    {
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        }
+      ],
+      "intent": "StackStatus"
     },
     {
       "slots": [

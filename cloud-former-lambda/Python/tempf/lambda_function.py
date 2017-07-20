@@ -2,11 +2,11 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.4
-#Date: 18/07/2017
-#Changelog: Added basic conversations. Added 2FA timeout. Multi-user verification. Requesting available stacks.
+#Version: 3.5
+#Date: 20/07/2017
+#Changelog: Listing current status of deployed stacks.
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation.
-#In-Production: Listing current status of deployed stacks.
+#In-Production: Further Error handling.
 ##
 
 ##Begin function
@@ -62,11 +62,6 @@ def reset_skill():
     with open('/tmp/blank.txt', 'rb') as data:
         s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
     speech_output = "Skill reset."
-    return statement(speech_output)
-
-@ask.intent("GetStatus")
-def get_system_status():
-    speech_output = "This Alexa skill is functioning normally."
     return statement(speech_output)
 
 @ask.intent("GetDateIntent")
@@ -406,7 +401,6 @@ def stackdeletion(number):
     except Exception as e:
         print('Stack deletion failed.')
         speech_output = "There has been a problem. The instance was not deleted successfully."
-        raise e
     return speech_output
 
 def security_request(user):
@@ -527,11 +521,39 @@ def list_stacks():
 
     speech_output = '. '.join(list1)
 
-    #print(ast.literal_eval(str(list2)))
     return statement(speech_output)
 
-#@ask.intent("StackStatus") #in-development
-#def stack_status(name):
+@ask.intent("StackStatus") #in-development
+def stack_status(number):
+    if number == None:
+        return question("Please specify a number along with your request for the status of a particular stack. If you want to list all running stacks, ask me to list all stacks.")
+    client = boto3.client('cloudformation')
+    try:
+        response = client.describe_stack_resources(
+            StackName='Cloud-Former-'+number,
+        )
+        speech_output="Name. "+response['StackResources'][0]['StackName'].replace("-", " ")+" . Resource. "+response['StackResources'][0]['ResourceType'].replace("::", " ")+" . Status. "+response['StackResources'][0]['ResourceStatus'].replace("_", " ")
+    except Exception as e:
+        speech_output="That stack either does not exist, or has been deleted."
+    return statement(speech_output)
+
+@ask.intent("StackStatusAll") #in-development
+def stack_status_all():
+    client = boto3.client('cloudformation')
+    try:
+        response = client.list_stacks(
+            StackStatusFilter=[
+                'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS'
+            ]
+        )
+        #'DELETE_COMPLETE' not included
+        numberofstacks=len(response['StackSummaries'])
+        speech_output=""
+        for i in range(numberofstacks):
+            speech_output=speech_output+"Name. "+response['StackSummaries'][i-1]['StackName'].replace("-", " ")+" . Status. "+response['StackSummaries'][i-1]['StackStatus'].replace("_", " ")+". "
+    except Exception as e:
+        speech_output="An error has occured. Please check the Alexa configuration."
+    return statement(speech_output)
 
 #@ask.intent("TemplateSummary") #in-development
 #def template_summary(name):

@@ -1,5 +1,3 @@
-GetStatus status
-GetStatus current status
 AMAZON.StopIntent no
 AMAZON.StopIntent nope
 AMAZON.StopIntent no thanks
@@ -38,9 +36,7 @@ TerminateInstance terminate stack
 TerminateInstance terminate instance
 RequestInstance list the instances
 RequestInstance name the instances
-RequestInstance what stacks are available
 RequestInstance list templates
-RequestInstance list stacks
 RequestInstance name instances
 RequestInstance list  instances
 RequestInstance name the templates
@@ -57,3 +53,11 @@ UnknownRequest i am {user}
 UnknownRequest i'm {user}
 UnknownRequest username {user}
 UnknownRequest my name is {user}
+StackStatus stack status {number}
+StackStatus list stack status {number}
+StackStatus state stack status {number}
+StackStatus name stack status {number}
+StackStatus list status {number}
+StackStatus give me the current status {number}
+StackStatus request stack status {number}
+StackStatusAll list all stacks
