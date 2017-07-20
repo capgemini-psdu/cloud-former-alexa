@@ -1,8 +1,11 @@
 {
     "dev": {
-        "app_function": "lambda_function.app", 
-        "aws_region": "eu-west-1", 
-        "profile_name": "default", 
-        "s3_bucket": "jlindsey-bucket-eu-west-1"
+        "app_function": "lambda_function.app",
+        "aws_region": "eu-west-1",
+        "profile_name": "default",
+        "s3_bucket": "jlindsey-bucket-eu-west-1",
+        "keep_warm": false,
+        "timeout_seconds": 15,
+        "memory_size": 256
     }
 }

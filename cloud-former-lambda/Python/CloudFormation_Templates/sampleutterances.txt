@@ -1,32 +1,63 @@
-GetStatus status
-GetStatus current status
 AMAZON.StopIntent no
 AMAZON.StopIntent nope
 AMAZON.StopIntent no thanks
 AMAZON.StopIntent no thank you
+ResetSkill reset the skill
+ResetSkill reset skill
+ResetSkill reset
 GetDateIntent what is the date
 GetDateIntent what day is today
 GetTimeIntent what is the time
 GetTimeIntent what time is it
-LaunchInstance launch number {number} with code {code}
-LaunchInstance start number {number} with code {code}
-LaunchInstance launch {number} with code {code}
-LaunchInstance start {number} with code {code}
-LaunchInstance start {number} with code {code}
-LaunchInstance launch {number} with code {code}
-LaunchInstance launch stack {number} with code {code}
-LaunchInstance launch instance {number} with code {code}
-LaunchInstance create instance {number} with code {code}
-TerminateInstance terminate number {number} with code {code}
-TerminateInstance stop number {number} with code {code}
+LaunchInstance launch number {number} with code {code} user {user}
+LaunchInstance start number {number} with code {code} user {user}
+LaunchInstance launch {number} with code {code} user {user}
+LaunchInstance start {number} with code {code} user {user}
+LaunchInstance start {number} with code {code} user {user}
+LaunchInstance launch {number} with code {code} user {user}
+LaunchInstance launch stack {number} with code {code} user {user}
+LaunchInstance launch instance {number} with code {code} user {user}
+LaunchInstance create instance {number} with code {code} user {user}
+LaunchInstance launch an instance
+LaunchInstance create a stack
+LaunchInstance create stack
+LaunchInstance create stack {number} with code {code} user {user}
+TerminateInstance terminate number {number} with code {code} user {user}
+TerminateInstance stop number {number} with code {code} user {user}
+TerminateInstance terminate {number} with code {code} user {user}
+TerminateInstance stop {number} with code {code} user {user}
 TerminateInstance terminate {number} with code {code}
-TerminateInstance stop {number} with code {code}
-TerminateInstance terminate {number} with code {code}
-TerminateInstance stop {number} with code {code}
-TerminateInstance delete stack {number} with code {code}
-TerminateInstance delete instance {number} with code {code}
+TerminateInstance stop {number} with code {code} user {user}
+TerminateInstance delete stack {number} with code {code} user {user}
+TerminateInstance delete instance {number} with code {code} user {user}
+TerminateInstance delete instance
+TerminateInstance delete stack
+TerminateInstance terminate stack
+TerminateInstance terminate instance
 RequestInstance list the instances
+RequestInstance name the instances
+RequestInstance list templates
+RequestInstance name instances
+RequestInstance list  instances
+RequestInstance name the templates
+RequestInstance read out the templates
+RequestInstance what templates are available
+RequestInstance list  available templates
 UnknownRequest number {number}
 UnknownRequest code {code}
 UnknownRequest number {number} with code {code}
-ExtraClarification {number}
+UnknownRequest {number}
+UnknownRequest {user}
+UnknownRequest user {user}
+UnknownRequest i am {user}
+UnknownRequest i'm {user}
+UnknownRequest username {user}
+UnknownRequest my name is {user}
+StackStatus stack status {number}
+StackStatus list stack status {number}
+StackStatus state stack status {number}
+StackStatus name stack status {number}
+StackStatus list status {number}
+StackStatus give me the current status {number}
+StackStatus request stack status {number}
+StackStatusAll list all stacks
