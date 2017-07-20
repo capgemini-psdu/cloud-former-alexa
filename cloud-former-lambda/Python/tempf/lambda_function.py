@@ -485,16 +485,6 @@ def security_check(code):
         return False
 
 @ask.intent("RequestInstance")
-def request_list():
-    speech_output = "Function not yet completed."
-    return statement(speech_output)
-
-@ask.intent("RequestInstance")
-def request_list():
-    speech_output = "Function not yet completed."
-    return statement(speech_output)
-
-@ask.intent("RequestInstance")
 def list_stacks():
     s3 = boto3.resource('s3')
     BUCKET_NAME = s3.Bucket('jlindsey-bucket-eu-west-1')
