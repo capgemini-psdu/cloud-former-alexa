@@ -81,6 +81,25 @@ def random_with_N_digits(n):
 
 @ask.intent("LaunchInstance")
 def launch_instance(number,code,user):
+    s3 = boto3.resource('s3')
+    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    KEY = 'availabletemplates.txt'
+    try:
+        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
+    except botocore.exceptions.ClientError as e:
+        print("An error has occured.")
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            return statement("An error has occured. Please check the Alexa configuration.")
+        else:
+            raise
+
+    file=open("/tmp/availabletemplates.txt","r")
+    availabletemplates=file.read()
+
+    if availabletemplates == None or availabletemplates == "":
+        return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.")
+
     s3 = boto3.client('s3')
     open("/tmp/request.txt","w").close()
     file=open("/tmp/request.txt","w")
@@ -238,12 +257,6 @@ def unknown_request(number,code,user):
     file3=open("/tmp/unknown.txt","r")
     unknownrequest=file3.read()
 
-    file4=open("/tmp/availabletemplates.txt","r")
-    availabletemplates=file4.read()
-
-    if availabletemplates == None or availabletemplates == "":
-        return question("Please request which templates are available before proceeding. This is to prevent modifying the incorrect stack.")
-
     if number == None:
         number = code
     else:
@@ -373,23 +386,15 @@ def stackformation(number):
 
 def stackdeletion(number):
     client = boto3.client('cloudformation')
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
-    KEY = 'availabletemplates.txt'
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
-    except botocore.exceptions.ClientError as e:
-        print("An error has occured.")
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-            return statement("An error has occured. Please check the Alexa configuration.")
-        else:
-            raise
 
-    file=open("/tmp/availabletemplates.txt","r")
-    liststring=file.read()
-    liststring2=ast.literal_eval(liststring)
-    if int(number)>len(liststring2) or number == None:
+    response = client.list_stacks(
+        StackStatusFilter=[
+            'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS'
+        ]
+    )
+    numberofstacks=len(response['StackSummaries'])
+
+    if int(number)>numberofstacks or number == None:
         speech_output = "The number you specified is invalid."
         return speech_output
     try:
