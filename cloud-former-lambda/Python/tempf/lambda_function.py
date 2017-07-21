@@ -234,12 +234,10 @@ def unknown_request(number,code,user):
     KEY = 'request.txt'
     KEY2 = 'number.txt'
     KEY3 = 'unknown.txt'
-    KEY4 = 'availabletemplates.txt'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/request.txt')
         s3.Bucket(BUCKET_NAME).download_file(KEY2, '/tmp/number.txt')
         s3.Bucket(BUCKET_NAME).download_file(KEY3, '/tmp/unknown.txt')
-        s3.Bucket(BUCKET_NAME).download_file(KEY4, '/tmp/availabletemplates.txt')
     except botocore.exceptions.ClientError as e:
         print("An error has occured.")
         if e.response['Error']['Code'] == "404":
@@ -387,6 +385,10 @@ def stackformation(number):
 def stackdeletion(number):
     client = boto3.client('cloudformation')
 
+    if number == None:
+        speech_output = "The number you specified is invalid."
+        return speech_output
+
     response = client.list_stacks(
         StackStatusFilter=[
             'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS'
@@ -394,9 +396,16 @@ def stackdeletion(number):
     )
     numberofstacks=len(response['StackSummaries'])
 
-    if int(number)>numberofstacks or number == None:
+    found=False
+    for i in range(numberofstacks):
+        Stackname=response['StackSummaries'][i-1]['StackName']
+        if Stackname == 'Cloud-Former-'+str(number):
+            found=True
+
+    if found == False:
         speech_output = "The number you specified is invalid."
         return speech_output
+
     try:
         response = client.delete_stack(
             StackName='Cloud-Former-'+str(number),
@@ -409,7 +418,7 @@ def stackdeletion(number):
     return speech_output
 
 def security_request(user):
-    #return True #enable for debugging - warning: this disables all security!
+    return True #enable for debugging - warning: this disables all security!
     s3 = boto3.resource('s3')
     BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
     KEY = 'contacts.csv'
@@ -455,7 +464,7 @@ def security_request(user):
     return True
 
 def security_check(code):
-    #return True #enable for debugging - warning: this disables all security!
+    return True #enable for debugging - warning: this disables all security!
     print("Checking...")
     s3 = boto3.resource('s3')
     BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
@@ -516,12 +525,12 @@ def list_stacks():
 
     speech_output = '. '.join(list1)
 
-    return statement(speech_output)
+    return question(speech_output)
 
 @ask.intent("StackStatus") #in-development
 def stack_status(number):
     if number == None:
-        return question("Please specify a number along with your request for the status of a particular stack. If you want to list all running stacks, ask me to list all stacks.")
+        return question("Please specify a number along with your request for the status of a particular stack.")
     client = boto3.client('cloudformation')
     try:
         response = client.describe_stack_resources(
@@ -548,7 +557,7 @@ def stack_status_all():
             speech_output=speech_output+"Name. "+response['StackSummaries'][i-1]['StackName'].replace("-", " ")+" . Status. "+response['StackSummaries'][i-1]['StackStatus'].replace("_", " ")+". "
     except Exception as e:
         speech_output="An error has occured. Please check the Alexa configuration."
-    return statement(speech_output)
+    return question(speech_output)
 
 #@ask.intent("TemplateSummary") #in-development
 #def template_summary(name):
