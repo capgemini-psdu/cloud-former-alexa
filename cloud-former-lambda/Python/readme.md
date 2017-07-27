@@ -6,7 +6,7 @@
 
 Before getting started with this project, you will require:
 
-* An Amazon Echo, Echo Dot or Echo Tap.
+* An Amazon Echo, Echo Dot or Echo Tap (or be willing to use the Amazon simulator.)
 * An installation of Python 2.7 on your device, found [here](https://www.python.org/downloads/).
 * An Amazon Web Services account.
 * An Amazon Developer account.
@@ -136,6 +136,19 @@ and the skill should respond with:
 
 if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
 
+## Additional Requirements
+
+You will require at least one CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on Github. This will launch a Linux EC2 instance within the Free Tier of AWS.
+
+Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
+
+```
+john,+441234567890
+bethany,+11234567890
+```
+
+The names must match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.
+
 ## Features and Functionality
 
 The following assumes the invocation name is "Cloud".
@@ -145,7 +158,6 @@ The following assumes the invocation name is "Cloud".
 *	“Alexa, ask Cloud to…” for a specific question, or: “Alexa, launch Cloud” if you do not have a specific question.
 (You can invoke this at any time if the skill pauses, and it will remember where you left off.)
 *	To reset the conversation, say “Alexa, ask Cloud to reset skill.”
-
 
 ### Creating a Stack
 
@@ -159,7 +171,7 @@ The following assumes the invocation name is "Cloud".
 *	*“Please specify your name/username.”*
 *	“Jon” / “Jordan” / “(username)”.
 *	*“You have been sent a 2FA code to your phone. Say that code now.”*
-*	“One two three four” / “(code)”. (There is a 90-second period to do this step.)
+*	“One two three four” / “(code)”. (There is a 60-second period to do this step.)
 *	*“Stack (number) has been launched.”*
 
 ### Deleting a Stack
@@ -174,7 +186,7 @@ The following assumes the invocation name is "Cloud".
 *	*“Please specify your name/username.”*
 *	“Jon” / “Jordan” / “(username)”.
 *	*“You have been sent a 2FA code to your phone. Say that code now.”*
-*	“One two three four” / “(code)”. (There is a 90-second period to do this step.)
+*	“One two three four” / “(code)”. (There is a 60-second period to do this step.)
 *	*“Stack (number) has been deleted.”*
 
 ### Describing a Specific Stack
