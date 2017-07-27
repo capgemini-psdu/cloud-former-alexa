@@ -142,45 +142,48 @@ The following assumes the invocation name is "Cloud".
 
 ### Initiating/Resetting the Skill
 ```
-•	“Alexa, ask Cloud to…” for a specific question, or:
-“Alexa, launch Cloud” if you do not have a specific question.
+•	“Alexa, ask Cloud to…” for a specific question, or: “Alexa, launch Cloud” if you do not have a specific question.
 (You can invoke this at any time if the skill pauses, and it will remember where you left off.)
 •	To reset the conversation, say “Alexa, ask Cloud to reset skill.”
 ```
 
 ### Creating a Stack
-```
+
+(Alexa responses are in *italics*.)
+
 •	“(Alexa, ask Cloud to) List available templates.”
-•	“1. Basic instance. 2. Secondary instance.”
+•	*“1. Basic instance. 2. Secondary instance.”*
 •	“Launch stack” / “Start stack” / “Launch stack (number)”. (Specifying a number is optional.)
-•	“Which stack would you like to launch?”
+•	*“Which stack would you like to launch?”*
 •	“One” / “Number one” / “Stack one”.
-•	“Please specify your name/username.”
+•	*“Please specify your name/username.”*
 •	“Jon” / “Jordan” / “(username)”.
-•	“You have been sent a 2FA code to your phone. Say that code now.”
+•	*“You have been sent a 2FA code to your phone. Say that code now.”*
 •	“One two three four” / “(code)”. (There is a 90-second period to do this step.)
-•	“Stack (number) has been launched.”
-```
+•	*“Stack (number) has been launched.”*
+
 ### Deleting a Stack
-```
+
+(Alexa responses are in *italics*.)
+
 •	“(Alexa, ask Cloud to) List all stacks.”
-•	“Name. Cloud-Former-1. Status. CREATE COMPLETE.
-Name. Cloud-Former-2. Status. CREATE COMPLETE. ……”
-•	“Terminate stack” / “Delete stack” / “Delete stack (number)”. (Specifying a number is optional.) *******this is broken.
-•	“Which stack would you like to delete?”
+•	*“Name. Cloud-Former-1. Status. CREATE COMPLETE. Name. Cloud-Former-2. Status. CREATE COMPLETE. ……”*
+•	“Terminate stack” / “Delete stack” / “Delete stack (number)”. (Specifying a number is optional.)
+•	*“Which stack would you like to delete?”*
 •	“One” / “Number one” / “Stack one”.
-•	“Please specify your name/username.”
+•	*“Please specify your name/username.”*
 •	“Jon” / “Jordan” / “(username)”.
-•	“You have been sent a 2FA code to your phone. Say that code now.”
+•	*“You have been sent a 2FA code to your phone. Say that code now.”*
 •	“One two three four” / “(code)”. (There is a 90-second period to do this step.)
-•	“Stack (number) has been deleted.”
-```
+•	*“Stack (number) has been deleted.”*
+
 ### Describing a Specific Stack
-```
+
+(Alexa responses are in *italics*.)
+
 •	“Alexa, ask Cloud to list Stack Status (number).”
-•	“(Stack status and resources).” Or
-“That stack either does not exist, or has been deleted.”
-```
+•	*“(Stack status and resources).” Or “That stack either does not exist, or has been deleted.”*
+
 ## Built With
 
 * [Flask](http://flask.pocoo.org/) - A microframework for Python.
