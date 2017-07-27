@@ -10,6 +10,7 @@ Before getting started with this project, you will require:
 * An installation of Python 2.7 on your device, found [here](https://www.python.org/downloads/).
 * An Amazon Web Services account.
 * An Amazon Developer account.
+* Some pre-obtained knowledge on the functionality of AWS [Lambda](https://aws.amazon.com/lambda/) and [Alexa Skills Kit](https://developer.amazon.com/edw/home.html#/skills).
 
 It is also advised to install the necessary module [virtualenv](https://virtualenv.pypa.io/en/stable/), as this will help during the deployment process. This can be achieved by:
 
@@ -119,8 +120,8 @@ Within your Amazon Developer Portal, navigate to the [Alexa Skills Kit](https://
 * Add a new skill.
 * Change the language to the relevant location. (Note: This skill was tested with English UK.) (This language CANNOT be changed at a later date.)
 * Choose a name for the skill, and an invocation name. This is what users will say to initiate your skill.
-* For the 'Intent Schema', copy and paste the text in the file /Python/CloudFormation_Templates/intentschema.json on Github.
-* For the 'Sample Utterances', copy and paste the text in the file /Python/CloudFormation_Templates/sampleutterances.txt on Github.
+* For the 'Intent Schema', copy and paste the text in the file /Python/CloudFormation_Templates/intentschema.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/CFA-4/cloud-former-lambda/Python/CloudFormation_Templates/intentschema.json).
+* For the 'Sample Utterances', copy and paste the text in the file /Python/CloudFormation_Templates/sampleutterances.txt on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/CFA-4/cloud-former-lambda/Python/CloudFormation_Templates/sampleutterances.txt).
 * In 'Custom Slot Types', create a slot called 'user', and enter the names of the users who you wish to have access to the Two-Factor Authentication codes. For example, you could use first names, such as 'John', or 'Bethany'.
 * In configuration, choose AWS Lambda ARN, and then paste in the ARN and geographical region of your Lambda function.
 
@@ -138,7 +139,7 @@ if the skill is functioning. If you receive an error, investigate the CloudWatch
 
 ## Additional Requirements
 
-You will require at least one CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on Github. This will launch a Linux EC2 instance within the Free Tier of AWS.
+You will require at least one CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/CFA-4/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
 
 Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
 
