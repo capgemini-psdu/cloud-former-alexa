@@ -2,11 +2,11 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.5
-#Date: 20/07/2017
-#Changelog: Listing current status of deployed stacks.
-#Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation.
+#Version: 3.7
+#Date: 27/07/2017
+#Changelog: Listing current status of deployed stacks. Ability to describe resources of a given template. Resolved multiple bugs.
 #In-Production: Further Error handling.
+#Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation.
 ##
 
 ##Begin function
@@ -31,7 +31,7 @@ ask = Ask(app, '/')
 
 @ask.launch
 def launched():
-    return question('Welcome to Cloud Former')
+    return question('Welcome to Cloud Former. You can ask me to launch or terminate stacks, along with listing available stacks and templates. Ask me a question to get started.')
 
 @ask.intent('AMAZON.StopIntent')
 def stop():
@@ -115,7 +115,7 @@ def launch_instance(number,code,user):
         file.close()
         with open('/tmp/unknown.txt', 'rb') as data:
             s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
-        return question("Please specify which stack you would like to launch. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to launch.")
+        return question("Please specify which stack you would like to launch. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to launch.")
     else:
         pass
 
@@ -156,7 +156,7 @@ def launch_instance(number,code,user):
         response=stackformation(int(number))
         return statement(str(response))
     else:
-        return question("Incorrect code.")
+        return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
 
 @ask.intent("TerminateInstance")
 def delete_instance(number,code,user):
@@ -175,7 +175,7 @@ def delete_instance(number,code,user):
         file.close()
         with open('/tmp/unknown.txt', 'rb') as data:
             s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
-        return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to delete.")
+        return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
     else:
         pass
 
@@ -222,7 +222,7 @@ def delete_instance(number,code,user):
         response=stackdeletion(int(number))
         return statement(str(response))
     else:
-        return question("Incorrect code.")
+        return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
 
 @ask.intent("UnknownRequest")
 def unknown_request(number,code,user):
@@ -292,11 +292,15 @@ def unknown_request(number,code,user):
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
                 s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
-            return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack seven.").reprompt("Please specify which stack you would like to delete.")
+            return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
         else:
             number=requestnumber
     else:
         pass
+
+    if request == "StatusRequest":
+        response=stack_status(number)
+        return statement(str(response))
 
     if code == None:
         if user == None:
@@ -335,14 +339,17 @@ def unknown_request(number,code,user):
             response=stackformation(number)
             return statement(str(response))
         else:
-            return question("Incorrect code.")
+            return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
     elif request == "DeleteInstance":
         securitycheck=security_check(int(code))
         if securitycheck == True:
             response=stackdeletion(number)
             return statement(str(response))
         else:
-            return question("Incorrect code.")
+            return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
+    # elif request == "StatusRequest":
+    #     response=stack_status(number)
+    #     return statement(str(response))
     else:
         return statement("An error has occured. Please check the Alexa configuration.")
 
@@ -483,7 +490,7 @@ def security_check(code):
     tfacode=words[0]
     currenttime=words[1]
 
-    if time.time() > float(currenttime)+90:
+    if time.time() > float(currenttime)+60:
         return False
     else:
         pass
@@ -501,6 +508,7 @@ def security_check(code):
 @ask.intent("RequestInstance")
 def list_stacks():
     s3 = boto3.resource('s3')
+    client = boto3.client('cloudformation')
     BUCKET_NAME = s3.Bucket('jlindsey-bucket-eu-west-1')
     list1=[]
     list2=[]
@@ -510,9 +518,16 @@ def list_stacks():
         words = filename.split(".")
         title=words[0]
         extension=words[1]
+        list3=""
         if extension == "json":
             i+=1
-            list1.append(str(i)+'. '+title.replace("_", " "))
+            response = client.get_template_summary(
+                TemplateURL='https://s3-eu-west-1.amazonaws.com/jlindsey-bucket-eu-west-1/'+str(file.key)
+            )
+            for j in range(len(response['ResourceTypes'])):
+                resource=response['ResourceTypes'][j-1]
+                list3=list3+resource.replace("::", " ")+", "
+            list1.append(str(i)+'. '+title.replace("_", " ")+". This launches "+list3.replace("AWS", "")+". ")
             list2.append(file.key)
 
     s3 = boto3.client('s3')
@@ -528,18 +543,37 @@ def list_stacks():
     return question(speech_output)
 
 @ask.intent("StackStatus") #in-development
+def stack_status_initial(number):
+    s3 = boto3.client('s3')
+    open("/tmp/request.txt","w").close()
+    file=open("/tmp/request.txt","w")
+    file.write("StatusRequest")
+    file.close()
+    with open('/tmp/request.txt', 'rb') as data:
+        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
+
+    if number == None or number == "?":
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("numberrequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+        return question("Please specify a number with your request for stack status.")
+    speech_output=stack_status(number)
+    return statement(speech_output)
+
 def stack_status(number):
-    if number == None:
-        return question("Please specify a number along with your request for the status of a particular stack.")
     client = boto3.client('cloudformation')
     try:
         response = client.describe_stack_resources(
-            StackName='Cloud-Former-'+number,
+            StackName='Cloud-Former-'+str(number),
         )
         speech_output="Name. "+response['StackResources'][0]['StackName'].replace("-", " ")+" . Resource. "+response['StackResources'][0]['ResourceType'].replace("::", " ")+" . Status. "+response['StackResources'][0]['ResourceStatus'].replace("_", " ")
     except Exception as e:
         speech_output="That stack either does not exist, or has been deleted."
-    return statement(speech_output)
+        return speech_output
+    return speech_output
 
 @ask.intent("StackStatusAll") #in-development
 def stack_status_all():
