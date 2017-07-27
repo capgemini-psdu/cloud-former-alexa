@@ -36,6 +36,12 @@
 ehthumbs.db
 Thumbs.db
 
+
+# Access File #
+###############
+access.json
+
+
 # Unneeded Python Packages #
 ############################
 cloud-former-lambda/Python/tempf/venv
