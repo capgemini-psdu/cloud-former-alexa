@@ -1,6 +1,6 @@
 # CloudFormation Alexa Python
 
-This readme.md is not yet complete.
+**This readme is not yet complete.**
 
 ### Prerequisites
 
@@ -19,11 +19,11 @@ pip install virtualenv
 
 ## Getting Started
 
-First of all, you will need to create an S3 bucket on Amazon Web Services ([AWS](https://aws.amazon.com/)), with permissions available only to yourself, and not public. This bucket will contain user-data, such as phone numbers for Two-Factor Authentication, and so this is important. You will then need to create a directory, such as "Alexa_SKill", and download the lambda_function.py file to that location.
+First of all, you will need to create an S3 bucket on Amazon Web Services ([AWS](https://aws.amazon.com/)), with permissions available only to yourself, and not public. This bucket will contain user-data, such as phone numbers for Two-Factor Authentication, and so this is important. You will then need to create a directory, such as "Alexa_Skill", and download the lambda_function.py file to that location.
 
-### Deployment
+## Deployment
 
-There are two methods of deploying the function to AWS Lambda. The first is manually, using [this guide](http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html). Alternatively, the automated and simplified deployment service [Zappa](https://github.com/Miserlou/Zappa) can be used. If you choose to use Zappa, a detailed guide can be found on the corresponding [Github](https://github.com/Miserlou/Zappa). Alternatively, this readme will demonstrate the manual alternative, although this method can be more difficult.
+There are two methods of deploying the function to AWS Lambda. The first is manually, using [this guide](http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html). Alternatively, the automated and simplified deployment service [Zappa](https://github.com/Miserlou/Zappa) can be used. If you choose to use Zappa, a detailed guide can be found on the corresponding [Github](https://github.com/Miserlou/Zappa). Alternatively, this readme will demonstrate the manual method, although this method can be more difficult.
 
 First, navigate to the directory where the lambda_function.py file is stored. Open the file, and then modify the constants at the top of the file with the name and region of your S3 bucket. For example:
 
@@ -37,11 +37,11 @@ virtualenv virtual-env
 ```
 where 'virtual-env' is the name of the environment. The name of this can be user-specified, and can vary however needed.
 
-Then, activate the virtual environment by (for Windows)
+Then, activate the virtual environment by (for Windows):
 ```
 virtual-env\Scripts\activate.bat
 ```
-or (for macOS)
+or (for macOS):
 ```
 source  virtual-env/bin/activate
 ```
@@ -62,9 +62,18 @@ Now, to create a deployment package you do the following:
 * First, create .zip file with your Python code you want to upload to AWS Lambda.
 * Add the libraries from preceding activated virtual environment to the .zip file. That is, you add the content of the following directory to the .zip file (note that you add the content of the directory and not the directory itself).
 
+Location (for Windows):
+```
+virtual-env\Lib\site-packages
+```
+or (for macOS):
+```
+virtual-env/lib/python2.7/site-packages
+```
+
 This .zip file will then need to be uploaded to AWS Lambda.
 
-## AWS Lambda
+### AWS Lambda
 
 (Note, if you are using Zappa to deploy this function, you can skip this entire section.)
 
@@ -75,14 +84,14 @@ To create the Lambda function:
 * For a trigger, choose 'Alexa Skills Kit'.
 * For Name and description, specify any input you prefer.
 * Runtime: Python 2.7.
-* Code entry type: Choosw to upload a .zip file.
+* Code entry type: Choose to upload a .zip file.
 * Role: You will need to create this role separately.
 
 In a new window, navigate to [AWS IAM Roles](https://console.aws.amazon.com/iam/home#/roles):
 
 * Create a new role.
 * Choose AWS Service Role > AWS Lambda.
-* Enable EC2FullAccess, VPCFullAccess, SNSFullAccess.
+* Enable EC2FullAccess, VPCFullAccess, SNSFullAccess, CloudWatchFullAccess.
 * Choose next, and give the role a name, and create the role.
 
 When the role is created, within the role:
@@ -103,7 +112,7 @@ Now navigate back to the Lambda function.
 
 The Lambda function is now created and ready.
 
-## Amazon Alexa Skill Setup
+### Amazon Alexa Skill Setup
 
 Within your Amazon Developer Portal, navigate to the [Alexa Skills Kit](https://developer.amazon.com/edw/home.html#/skills). Then:
 
@@ -115,7 +124,6 @@ Within your Amazon Developer Portal, navigate to the [Alexa Skills Kit](https://
 * In 'Custom Slot Types', create a slot called 'user', and enter the names of the users who you wish to have access to the Two-Factor Authentication codes. For example, you could use first names, such as 'John', or 'Bethany'.
 * In configuration, choose AWS Lambda ARN, and then paste in the ARN and geographical region of your Lambda function.
 
-
 ### Testing
 
 In the testing panel, type:
@@ -124,8 +132,55 @@ In the testing panel, type:
 
 and the skill should respond with:
 
-"date/month" if it is functioning.
+"date/month"
 
+if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
+
+## Features and Functionality
+
+The following assumes the invocation name is "Cloud".
+
+### Initiating/Resetting the Skill
+```
+•	“Alexa, ask Cloud to…” for a specific question, or:
+“Alexa, launch Cloud” if you do not have a specific question.
+(You can invoke this at any time if the skill pauses, and it will remember where you left off.)
+•	To reset the conversation, say “Alexa, ask Cloud to reset skill.”
+```
+
+### Creating a Stack
+```
+•	“(Alexa, ask Cloud to) List available templates.”
+•	“1. Basic instance. 2. Secondary instance.”
+•	“Launch stack” / “Start stack” / “Launch stack (number)”. (Specifying a number is optional.)
+•	“Which stack would you like to launch?”
+•	“One” / “Number one” / “Stack one”.
+•	“Please specify your name/username.”
+•	“Jon” / “Jordan” / “(username)”.
+•	“You have been sent a 2FA code to your phone. Say that code now.”
+•	“One two three four” / “(code)”. (There is a 90-second period to do this step.)
+•	“Stack (number) has been launched.”
+```
+### Deleting a Stack
+```
+•	“(Alexa, ask Cloud to) List all stacks.”
+•	“Name. Cloud-Former-1. Status. CREATE COMPLETE.
+Name. Cloud-Former-2. Status. CREATE COMPLETE. ……”
+•	“Terminate stack” / “Delete stack” / “Delete stack (number)”. (Specifying a number is optional.) *******this is broken.
+•	“Which stack would you like to delete?”
+•	“One” / “Number one” / “Stack one”.
+•	“Please specify your name/username.”
+•	“Jon” / “Jordan” / “(username)”.
+•	“You have been sent a 2FA code to your phone. Say that code now.”
+•	“One two three four” / “(code)”. (There is a 90-second period to do this step.)
+•	“Stack (number) has been deleted.”
+```
+### Describing a Specific Stack
+```
+•	“Alexa, ask Cloud to list Stack Status (number).”
+•	“(Stack status and resources).” Or
+“That stack either does not exist, or has been deleted.”
+```
 ## Built With
 
 * [Flask](http://flask.pocoo.org/) - A microframework for Python.
@@ -140,6 +195,7 @@ See also the [main repository](https://github.com/capgemini-psdu/cloud-former-al
 ## License
 
 Flask is Copyright (c) 2015 by Armin Ronacher and contributors. Some rights reserved.
+
 Flask-Ask is licensed under the Apache License 2.0.
 
 This project is Copyright (c) 2017 by Capgemini UK.
