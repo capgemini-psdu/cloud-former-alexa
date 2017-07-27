@@ -2,9 +2,9 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.7
+#Version: 3.8
 #Date: 27/07/2017
-#Changelog: Listing current status of deployed stacks. Ability to describe resources of a given template. Resolved multiple bugs.
+#Changelog: Listing current status of deployed stacks. Ability to describe resources of a given template. Resolved multiple bugs. Added constants to top of file.
 #In-Production: Further Error handling.
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation.
 ##
@@ -25,6 +25,11 @@ import csv
 import ast
 
 print('Loading function')
+
+###User-specific constants:
+userbucketname='jlindsey-bucket-eu-west-1'
+userbucketregion='eu-west-1'
+###
 
 app = Flask(__name__)
 ask = Ask(app, '/')
@@ -50,17 +55,17 @@ def reset_skill():
     s3 = boto3.client('s3')
     open("/tmp/blank.txt","w").close()
     with open('/tmp/blank.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'availabletemplates.txt')
+        s3.upload_fileobj(data, userbucketname, 'availabletemplates.txt')
     with open('/tmp/blank.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
+        s3.upload_fileobj(data, userbucketname, 'number.txt')
     with open('/tmp/blank.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
+        s3.upload_fileobj(data, userbucketname, 'request.txt')
     with open('/tmp/blank.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'securitycode.txt')
+        s3.upload_fileobj(data, userbucketname, 'securitycode.txt')
     with open('/tmp/blank.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+        s3.upload_fileobj(data, userbucketname, 'unknown.txt')
     with open('/tmp/blank.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
+        s3.upload_fileobj(data, userbucketname, 'user.txt')
     speech_output = "Skill reset."
     return statement(speech_output)
 
@@ -82,7 +87,7 @@ def random_with_N_digits(n):
 @ask.intent("LaunchInstance")
 def launch_instance(number,code,user):
     s3 = boto3.resource('s3')
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    BUCKET_NAME = userbucketname
     KEY = 'availabletemplates.txt'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
@@ -106,7 +111,7 @@ def launch_instance(number,code,user):
     file.write("LaunchInstance")
     file.close()
     with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
+        s3.upload_fileobj(data, userbucketname, 'request.txt')
 
     if number == None or number == "?":
         open("/tmp/unknown.txt","w").close()
@@ -114,7 +119,7 @@ def launch_instance(number,code,user):
         file.write("numberrequest")
         file.close()
         with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
         return question("Please specify which stack you would like to launch. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to launch.")
     else:
         pass
@@ -124,7 +129,7 @@ def launch_instance(number,code,user):
     file.write(number)
     file.close()
     with open('/tmp/number.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
+        s3.upload_fileobj(data, userbucketname, 'number.txt')
 
     if code == None:
         if user == None:
@@ -133,7 +138,7 @@ def launch_instance(number,code,user):
             file.write("userrequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("Which user are you?")
         else:
             requestcheck=security_request(user)
@@ -146,7 +151,7 @@ def launch_instance(number,code,user):
             file.write("coderequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
@@ -166,7 +171,7 @@ def delete_instance(number,code,user):
     file.write("DeleteInstance")
     file.close()
     with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
+        s3.upload_fileobj(data, userbucketname, 'request.txt')
 
     if number == None  or number == "?":
         open("/tmp/unknown.txt","w").close()
@@ -174,7 +179,7 @@ def delete_instance(number,code,user):
         file.write("numberrequest")
         file.close()
         with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
         return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
     else:
         pass
@@ -184,7 +189,7 @@ def delete_instance(number,code,user):
     file.write(number)
     file.close()
     with open('/tmp/number.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
+        s3.upload_fileobj(data, userbucketname, 'number.txt')
 
     if code == None:
         if user == None:
@@ -193,7 +198,7 @@ def delete_instance(number,code,user):
             file.write("userrequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("Which user are you?")
         else:
             open("/tmp/user.txt","w").close()
@@ -201,7 +206,7 @@ def delete_instance(number,code,user):
             file.write(user)
             file.close()
             with open('/tmp/user.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
+                s3.upload_fileobj(data, userbucketname, 'user.txt')
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
@@ -212,7 +217,7 @@ def delete_instance(number,code,user):
             file.write("coderequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
@@ -230,7 +235,7 @@ def unknown_request(number,code,user):
         return question("I'm sorry, I did not understand your request or statement. Please try again.")
 
     s3 = boto3.resource('s3')
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    BUCKET_NAME = userbucketname
     KEY = 'request.txt'
     KEY2 = 'number.txt'
     KEY3 = 'unknown.txt'
@@ -269,7 +274,7 @@ def unknown_request(number,code,user):
         file.write(number)
         file.close()
         with open('/tmp/number.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'number.txt')
+            s3.upload_fileobj(data, userbucketname, 'number.txt')
         number=int(number)
         code=None
     elif unknownrequest == "userrequest":
@@ -280,7 +285,7 @@ def unknown_request(number,code,user):
         file.write(user)
         file.close()
         with open('/tmp/user.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
+            s3.upload_fileobj(data, userbucketname, 'user.txt')
     else:
         pass
 
@@ -291,7 +296,7 @@ def unknown_request(number,code,user):
             file.write("numberrequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
         else:
             number=requestnumber
@@ -309,7 +314,7 @@ def unknown_request(number,code,user):
             file.write("userrequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("Which user are you?")
         else:
             open("/tmp/user.txt","w").close()
@@ -317,7 +322,7 @@ def unknown_request(number,code,user):
             file.write(user)
             file.close()
             with open('/tmp/user.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'user.txt')
+                s3.upload_fileobj(data, userbucketname, 'user.txt')
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
@@ -328,7 +333,7 @@ def unknown_request(number,code,user):
             file.write("coderequest")
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
     else:
         pass
@@ -356,7 +361,7 @@ def unknown_request(number,code,user):
 def stackformation(number):
     client = boto3.client('cloudformation')
     s3 = boto3.resource('s3')
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    BUCKET_NAME = userbucketname
     KEY = 'availabletemplates.txt'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
@@ -377,7 +382,7 @@ def stackformation(number):
     try:
         response = client.create_stack(
             StackName='Cloud-Former-'+str(number),
-            TemplateURL='https://s3-eu-west-1.amazonaws.com/jlindsey-bucket-eu-west-1/'+str(liststring2[int(number)-1]),
+            TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(liststring2[int(number)-1]),
             TimeoutInMinutes=5,
             OnFailure='ROLLBACK',
             ClientRequestToken='tokenrequest'+str(number)
@@ -427,7 +432,7 @@ def stackdeletion(number):
 def security_request(user):
     return True #enable for debugging - warning: this disables all security!
     s3 = boto3.resource('s3')
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    BUCKET_NAME = userbucketname
     KEY = 'contacts.csv'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/contacts.csv')
@@ -466,7 +471,7 @@ def security_request(user):
     file.close()
     s3 = boto3.client('s3')
     with open('/tmp/securitycode.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'securitycode.txt')
+        s3.upload_fileobj(data, userbucketname, 'securitycode.txt')
     sns.publish(PhoneNumber = str(contactnumber), Message=str(tfacode) )
     return True
 
@@ -474,7 +479,7 @@ def security_check(code):
     return True #enable for debugging - warning: this disables all security!
     print("Checking...")
     s3 = boto3.resource('s3')
-    BUCKET_NAME = 'jlindsey-bucket-eu-west-1'
+    BUCKET_NAME = userbucketname
     KEY = 'securitycode.txt'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/securitycode.txt')
@@ -509,7 +514,7 @@ def security_check(code):
 def list_stacks():
     s3 = boto3.resource('s3')
     client = boto3.client('cloudformation')
-    BUCKET_NAME = s3.Bucket('jlindsey-bucket-eu-west-1')
+    BUCKET_NAME = s3.Bucket(userbucketname)
     list1=[]
     list2=[]
     i=0
@@ -522,7 +527,7 @@ def list_stacks():
         if extension == "json":
             i+=1
             response = client.get_template_summary(
-                TemplateURL='https://s3-eu-west-1.amazonaws.com/jlindsey-bucket-eu-west-1/'+str(file.key)
+                TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(file.key)
             )
             for j in range(len(response['ResourceTypes'])):
                 resource=response['ResourceTypes'][j-1]
@@ -536,7 +541,7 @@ def list_stacks():
     file.write(str(list2))
     file.close()
     with open('/tmp/availabletemplates.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'availabletemplates.txt')
+        s3.upload_fileobj(data, userbucketname, 'availabletemplates.txt')
 
     speech_output = '. '.join(list1)
 
@@ -550,7 +555,7 @@ def stack_status_initial(number):
     file.write("StatusRequest")
     file.close()
     with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'request.txt')
+        s3.upload_fileobj(data, userbucketname, 'request.txt')
 
     if number == None or number == "?":
         open("/tmp/unknown.txt","w").close()
@@ -558,7 +563,7 @@ def stack_status_initial(number):
         file.write("numberrequest")
         file.close()
         with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, 'jlindsey-bucket-eu-west-1', 'unknown.txt')
+            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
         return question("Please specify a number with your request for stack status.")
     speech_output=stack_status(number)
     return statement(speech_output)
