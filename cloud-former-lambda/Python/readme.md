@@ -20,7 +20,7 @@ pip install virtualenv
 
 ## Getting Started
 
-First of all, you will need to create an S3 bucket on Amazon Web Services ([AWS](https://aws.amazon.com/)), with permissions available only to yourself, and not public. This bucket will contain user-data, such as phone numbers for Two-Factor Authentication, and so this is important. You will then need to create a directory, such as "Alexa_Skill", and download the lambda_function.py file to that location.
+First of all, you will need to create an S3 bucket on Amazon Web Services ([AWS](https://aws.amazon.com/)), with permissions available only to yourself, and not public. This bucket will contain user-data, such as phone numbers for Two-Factor Authentication, and so this is important. You will then need to create a directory on your local device, such as "Alexa_Skill", and download the [lambda_function.py file](https://github.com/capgemini-psdu/cloud-former-alexa/blob/CFA-4/cloud-former-lambda/Python/tempf/lambda_function.py) to that location. It is important that the filename is not altered throughout this process.
 
 ## Deployment
 
@@ -47,7 +47,7 @@ or (for macOS):
 source  virtual-env/bin/activate
 ```
 
-If this is successful, (venv) will appear in the terminal window, to inform you that you are based within the virtual environment. Next, install the following modules:
+If this is successful, the environment name (virtual-env) will appear on the left in the terminal window, to inform you that you are based within the virtual environment. Next, install the following modules:
 
 ```
 pip install boto3
@@ -55,6 +55,8 @@ pip install botocore
 pip install flask
 pip install flask_ask
 ```
+
+**There is currently a bug with the Python module _openssl. This is being worked on.**
 
 (Note, installing boto3 is optional and should already function on AWS Lambda. However, it has been stated here for completeness.)
 
@@ -90,20 +92,20 @@ To create the Lambda function:
 
 In a new window, navigate to [AWS IAM Roles](https://console.aws.amazon.com/iam/home#/roles):
 
-* Create a new role.
+* Create a custom role.
 * Choose AWS Service Role > AWS Lambda.
 * Enable EC2FullAccess, VPCFullAccess, SNSFullAccess, CloudWatchFullAccess.
 * Choose next, and give the role a name, and create the role.
 
 When the role is created, within the role:
 
-* Click on 'Create Role Policy'.
+* Click on 'Create Role Policy' or 'Add inline policy'.
 * Navigate to policy generator.
 * Choose AWS Service: AWS CloudFormation.
 * Actions: All Actions.
 * ARN Name: *
 * Click on 'Add Statement'.
-* Click on 'Next Step', and then 'Create Policy'.
+* Click on 'Next Step', and then 'Apply Policy'.
 
 Now navigate back to the Lambda function.
 
@@ -136,6 +138,8 @@ and the skill should respond with:
 "date/month"
 
 if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
+
+**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, if you write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround.**
 
 ## Additional Requirements
 
@@ -196,6 +200,10 @@ The following assumes the invocation name is "Cloud".
 
 *	“Alexa, ask Cloud to list Stack Status (number).”
 *	*“(Stack status and resources).” Or “That stack either does not exist, or has been deleted.”*
+
+## Debugging
+
+.
 
 ## Built With
 
