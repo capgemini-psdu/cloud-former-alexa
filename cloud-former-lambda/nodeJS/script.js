@@ -191,7 +191,7 @@ const handlers = {
               //Create stack from amazon web services
               theStack.delete(console.log);
 
-              return self.emit(':tell', "your stack, " + stackNameOutput + "has been deleted");
+              return self.emit(':tell', "your stack, " + stackNameOutput + " has been deleted");
 
             }
             else {
