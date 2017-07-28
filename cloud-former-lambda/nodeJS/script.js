@@ -344,17 +344,13 @@ const handlers = {
   //Handle help regarding custom cloud former intents
   'CloudFormerHelpIntent' : function () {
 
-    //add required slot to intent;
-    this.event.request.intent.slots["HelpTopics"] = {};
-    this.event.request.intent.slots["HelpTopics"].name = "HelpTopics";
-
     var slots = this.event.request.intent.slots;
 
-    var askSlot = shortPause + "Please specify one of the option names to find out more or say cancel to leave";
+    var askSlot = "Please specify one of the option names";
 
     var message = "Here is a list of actions that can be invoked using Cloud Former." + shortPause;
 
-    var actionsList = "Create, Delete, List, Count, Status and finally Option";
+    var actionsList = "Create, Delete, List, Count, Status, Option";
 
     //Check if the help slot has been filled, otherwise elicit a value.
     if(!validateSlot(slots.HelpTopics)){
@@ -362,17 +358,17 @@ const handlers = {
     }
 
     //Check intents and provide specific help
-    switch(slots.HelpTopics.id){
+    switch(slots.HelpTopics.value){
 
       case "create":
         this.emit(':tell', "Cloud Former supports the creation of stacks from templates;"
-          + "invocation of this action will require elevated privellges." + shortPause +
+          + "invocation of this action will require elevated privilege." + shortPause +
           "simply ask Cloud Former to make a stack to invoke this action");
         break;
 
       case "delete":
         this.emit(':tell', "Cloud Former supports the deletion of stacks from templates, created by cloudformer;"
-          + "invocation of this action will require elevated privellges." + shortPause +
+          + "invocation of this action will require elevated privilege." + shortPause +
           "simply ask Cloud Former to destroy a stack to invoke this action");
         break;
 
@@ -402,23 +398,6 @@ const handlers = {
 
     }
 
-  },
-
-  //Handle call for cancelation
-  'AMAZON.CancelIntent' : function () {
-    this.emit(':tell', 'Goodbye');
-  },
-
-  //Handle call for help
-  'AMAZON.HelpIntent' : function () {
-
-      //Call custom help intent.
-      this.emit('CloudFormerHelpIntent');
-  },
-
-  //Handle call for stopping
-  'AMAZON.StopIntent' : function () {
-    this.emit(':tell', 'Goodbye');
   },
 
   'Unhandled': function() {
