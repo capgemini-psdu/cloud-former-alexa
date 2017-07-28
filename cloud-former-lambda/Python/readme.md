@@ -1,6 +1,6 @@
 # CloudFormation Alexa Python
 
-**This readme is not yet complete.**
+**This readme is not yet complete, and the installation does not currently work!**
 
 ### Prerequisites
 
@@ -56,7 +56,7 @@ pip install flask
 pip install flask_ask
 ```
 
-**There is currently a bug with the Python module _openssl. This is being worked on.**
+**There is currently a bug with the Python module _openssl. This is [being worked on](https://github.com/johnwheeler/flask-ask/issues/167).**
 
 (Note, installing boto3 is optional and should already function on AWS Lambda. However, it has been stated here for completeness.)
 
