@@ -1,9 +1,9 @@
 /*
  * Lambda function code for the CloudFormer Amazon Alexa Skill
- * Currently Supported Features: Dynamic Create (protected), Dynamic Delete (protected), List Templates, Template Count and Status of CloudFormer stacks
+ * Currently Supported Features: Dynamic Create (protected), Dynamic Delete (protected), List Templates, Template Count, Status of CloudFormer stacks, Advanced Help
  *
  * @author rush.soni@capgemini.com
- * @version 1.5
+ * @version 1.6
  */
 
 'use strict';
@@ -42,18 +42,18 @@ const authParams = {
 
 const applicationId = 'amzn1.ask.skill.c2500316-170e-41cc-9c25-45788bd2b814';
 
-// The timeout count in seconds provided to the authentication key generated for valid users.
+//The timeout count in seconds provided to the authentication key generated for valid users.
 const authTimeout = 120;
 
-// The Region in which the bucket is placed within S3.
+//The Region in which the bucket is placed within S3.
 const bucketRegion = 'eu-west-1';
 
-// The Bucket name in which cloud formation templates are placed.
+//The Bucket name in which cloud formation templates are placed.
 const bucket = "cloudformer-eu-west-1";
 
 const userFolder = "users/";
 
-// The file path for the access file which contains permitted users.
+//The file path for the access file which contains permitted users.
 const userFile = userFolder + "access.json";
 
 const shortPause = "<break time='1s'/>";
@@ -107,7 +107,7 @@ const handlers = {
         //Function logic for processing mapPromise for Listing maps.
         mapPromise.then(
 
-          // Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
+          //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
           function(map) {
 
             //Get the user specified option
@@ -118,7 +118,7 @@ const handlers = {
               var stackName = validateStackName(map[optionNumber].name);
               var theStack = new Stack(stackName);
 
-              //Create stack from amazon web services
+              //Create stack from amazon web services from the chosen template placed based within the specified bucket.
               theStack.apply(map[optionNumber].url, {
                 Parameters: {},
                 DisableRollback: false,
@@ -129,16 +129,15 @@ const handlers = {
                 },
               }, console.log);
 
-              //Delete the auth key once transactions started.
-              deleteAuthKey(user, self);
               return self.emit(':tell', "your stack, " + alexaOutputStackName(map[optionNumber].name) + " has been created ");
 
-            } else {
+            }
+            else {
               console.error("Item not found within the S3 bucket.");
               return self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
             }
           },
-          // Fail: Case where the map returns empty
+          //Fail: Case where the map returns empty
           function(errorMsg) {
 
             //log error in console and then have alexa emit the message.
@@ -178,7 +177,7 @@ const handlers = {
         //Function logic for processing mapPromise for Listing maps.
         mapPromise.then(
 
-          // Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
+          //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
           function(map) {
 
             //Get the user specified option
@@ -194,12 +193,13 @@ const handlers = {
 
               return self.emit(':tell', "your stack, " + alexaOutputStackName + "has been deleted");
 
-            } else {
+            }
+            else {
               console.error("Cannot find stack with the name " + alexaOutputStackName + "in the list of running stacks.");
               return self.emit(':tell', "Cannot find stack with the name " + alexaOutputStackName + "in the list of running stacks.");
             }
           },
-          // Fail: Case where the map returns empty
+          //Fail: Case where the map returns empty
           function(errorMsg) {
 
             //log error in console and then have alexa emit the message.
@@ -225,19 +225,16 @@ const handlers = {
     //Function logic for processing mapPromise for Listing maps.
     mapPromise.then(
 
-      // Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
+      //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
       function(map) {
-        //for each object within the bucket output it's description
         for (var key in map) {
-
-          //Trims key removing the file extension
+          //add each [option,name] pair followed by a pause to the output
           speechOutput += key + "; " + map[key].name + shortPause;
-
         }
 
         self.emit(':tell', speechOutput);
       },
-      // Fail: Case where the map returns empty
+      //Fail: Case where the map returns empty
       function(errorMsg) {
 
         //log error in console and then have alexa emit the message.
@@ -257,23 +254,13 @@ const handlers = {
     //Function logic for processing mapPromise for returning the count of objects in the s3 bucket.
     mapPromise.then(
 
-      // Case where the mapPromise has been sucessfully resolved and map contains objects..
+      //Case where the mapPromise has been sucessfully resolved and map contains objects.
       function(map) {
-
-        var template_counter = 0;
-
-        //for each object within the bucket output it's description
-        for (var key in map) {
-          template_counter += 1;
-        }
-
-
-        self.emit(':tell', 'Your S3 bucket has ' + template_counter + " cloud formation templates.");
+        self.emit(':tell', 'There are' + map.length - 1 + " cloud formation templates in your bucket");
       },
-      // Case where the map returns empty
+      //Case where the map returns empty
       function(errorMsg) {
-
-        //log error in console and then have alexa emit the message.
+        //Log error in console and then have alexa emit the message.
         console.error(errorMsg);
         self.emit(':tell', errorMsg);
 
@@ -289,7 +276,7 @@ const handlers = {
     mapPromise.then(
 
       function(map) {
-
+        //Returns a list of CloudFormation stacks launched from cloud former
         getStatus(map).then(
 
           function(statusMap) {
@@ -305,7 +292,8 @@ const handlers = {
 
               return self.emit(':tell', speechOutput);
 
-            } else {
+            }
+            else {
               return self.emit(':tell', 'There are no stacks running which have been created by cloud former');
             }
           },
@@ -321,8 +309,120 @@ const handlers = {
     );
   },
 
+  //Get the template name from it's corresponding option number.
+  'CloudFormerOptionInfoIntent': function() {
+
+    var self = this;
+
+    delegateToAlexa(self);
+
+    mapPromise.then(
+      function(map) {
+
+        var optionNumber = self.event.request.intent.slots.OptionNumber.value;
+
+        //Options slot unfilled due to not specifiying the option number, so elicit the slot to fill it.
+        if (typeof optionNumber === 'undefined') {
+          self.emit(":elicitSlot", "OptionNumber", "What option number would you like to know the name for", null, null);
+        }
+
+        //Output information associated with option
+        if (map[optionNumber] != null && map[optionNumber] != {} && typeof map[optionNumber] !== 'undefined') {
+          self.emit(':tell', "Here is the name of the template associated with option " + optionNumber + " " + shortPause + alexaOutputStackName(map[optionNumber].name));
+        }
+        //Option number not associated with a CloudFormation template.
+        else {
+          self.emit(':tell', "There isn't a template associated with option number " + optionNumber + shortPause + " there are only " + (map.length - 1) + " templates in the bucket");
+        }
+      },
+      function(error) {
+        self.emit(':tell', 'there are no cloud formation templates in ' + bucket);
+      }
+    );
+  },
+
+  //Handle help regarding custom cloud former intents
+  'CloudFormerHelpIntent' : function () {
+
+    //add required slot to intent;
+    this.event.request.intent.slots["HelpTopics"] = {};
+    this.event.request.intent.slots["HelpTopics"].name = "HelpTopics";
+
+    var slots = this.event.request.intent.slots;
+
+    var askSlot = shortPause + "Please specify one of the option names to find out more or say cancel to leave";
+
+    var message = "Here is a list of actions that can be invoked using Cloud Former." + shortPause;
+
+    var actionsList = "Create, Delete, List, Count, Status and finally Option";
+
+    //Check if the help slot has been filled, otherwise elicit a value.
+    if(!validateSlot(slots.HelpTopics)){
+      this.emit(":elicitSlot", "HelpTopics", message + actionsList + askSlot, null, null);
+    }
+
+    //Check intents and provide specific help
+    switch(slots.HelpTopics.id){
+
+      case "create":
+        this.emit(':tell', "Cloud Former supports the creation of stacks from templates;"
+          + "invocation of this action will require elevated privellges." + shortPause +
+          "simply ask Cloud Former to make a stack to invoke this action");
+        break;
+
+      case "delete":
+        this.emit(':tell', "Cloud Former supports the deletion of stacks from templates, created by cloudformer;"
+          + "invocation of this action will require elevated privellges." + shortPause +
+          "simply ask Cloud Former to destroy a stack to invoke this action");
+        break;
+
+      case "count":
+        this.emit(':tell', "You can ask Cloud Former to give you a count of templates in your bucket, created by cloudformer;"
+         + shortPause + "simply ask Cloud Former how many temples are there to invoke this action");
+        break;
+
+      case "list":
+        this.emit(':tell', "You can ask Cloud Former to list the option number and the associated name of all templates in your bucket;"
+         + shortPause + "simply ask Cloud Former to list available templates to invoke this action");
+        break;
+
+      case "status":
+        this.emit(':tell', "You can ask Cloud Former to give you a list of running stacks which have been created by Cloud Former;"
+         + shortPause + "simply ask Cloud Former to show the status to invoke this action");
+        break;
+
+      case "option":
+        this.emit(':tell', "You can ask Cloud Former for name of a template which is associated to an option number;"
+         + shortPause + "simply ask Cloud Former to tell me about an option to invoke this action");
+        break;
+
+      default:
+        this.emit(':tell', "Sorry, i don't know how to help you with this");
+        break;
+
+    }
+
+  },
+
+  //Handle call for cancelation
+  'AMAZON.CancelIntent' : function () {
+    this.emit(':tell', 'Goodbye');
+  },
+
+  //Handle call for help
+  'AMAZON.HelpIntent' : function () {
+
+      //Call custom help intent.
+      this.emit('CloudFormerHelpIntent');
+  },
+
+  //Handle call for stopping
+  'AMAZON.StopIntent' : function () {
+    this.emit(':tell', 'Goodbye');
+  },
+
   'Unhandled': function() {
-    this.emit(':ask', "Sorry i didn't quite catch that, please try again");
+    this.emit(':tell', "Sorry i didn't quite catch that, please try again");
   }
 
 };
@@ -349,7 +449,7 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
     MaxKeys: maxKeyCount
   };
 
-  //Counter used to keep track of read in templates.
+  //Counter used to keep track of templates in bucket.
   var template_counter = 0;
 
   var self = this;
@@ -365,7 +465,7 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
 
       var bucketList = [];
 
-      //for each cloudformation template key in the bucket add it to a map.
+      //for each CloudFormation template key in the bucket add it to a map.
       for (var i = 0; i < data.Contents.length; i++) {
 
         var bucketItem = data.Contents[i];
@@ -375,7 +475,7 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
           //increment counter for new map address.
           template_counter++;
 
-          // get the cloud formation key.
+          //get the cloud formation key.
           var cloudformation_template_key = bucketItem.Key;
           var url = "https://s3-" + bucketRegion + ".amazonaws.com/" + bucketName + "/" + cloudformation_template_key;
 
@@ -411,7 +511,7 @@ function getStatus(map) {
     StackStatusFilter: ['CREATE_COMPLETE']
   };
 
-  //Fetch the list from cloudformation stacks, look at the stackName and compare it to that from the map
+  //Fetch the list of CloudFormation stacks, look at the stackName and compare it to that from the options map
   var promise = cloudFormation.listStacks(params).promise();
 
   var statusMap = promise.then(
@@ -432,9 +532,10 @@ function getStatus(map) {
 
         }
       }
-      // return to be used in another promise.
+      //return to be used in another promise.
       return cloudFormerStacks;
     },
+    //Case where there are no stacks
     function(err) {
       console.log("Couldn't get the list of completed stacks from Cloud Formation.");
     }
@@ -480,7 +581,7 @@ function authenticateUsers(spokenUser, self, callback) {
     Name: 'AuthKey'
   };
 
-  // generate an auth key
+  //generate an auth key
   var authKey = auth(authParams);
 
   //Send Auth Code.
@@ -501,13 +602,15 @@ function authenticateUsers(spokenUser, self, callback) {
         Key: userFile
       };
 
-      // get access file for set of users.
+      //get access file for set of users.
       s3.getObject(objectParams, function(errorMsg, response) {
 
         if (errorMsg) {
           console.log("Couldn't locate " + userFile + " object from within the " + bucket);
           return false;
-        } else {
+        }
+        else {
+          //Read in and parse access file into a JSON object
           var contactsString = response.Body.toString();
           var contacts = JSON.parse(contactsString);
 
@@ -516,7 +619,6 @@ function authenticateUsers(spokenUser, self, callback) {
           //Get user from slot.
           if (userString != null && userString != "") {
 
-            //Flag for valid user.
             var validUser = false;
 
             //check if the user exists within the allowed users.
@@ -575,24 +677,26 @@ function authenticateUsers(spokenUser, self, callback) {
                     var slots = self.event.request.intent.slots;
 
                     //Check if not set, otherwise recursive call overides the slot value.
-                    if (typeof slots.AuthKey.value === 'undefined' && slots.AuthKey.value == null) {
+                    if (!validateSlot(slots.AuthKey)) {
                       self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
                     }
+
                     var userAuthKey = self.event.request.intent.slots.AuthKey.value;
 
                     console.log("Spoken AuthKey: " + userAuthKey);
 
-                    //Deny permission
+                    //Accept user if keys match
                     if (userAuthKey == authCode) {
                       deleteAuthKey(userString, self);
                       callback(true);
-                    } else {
+                    }
+                    else {
                       callback(false);
                     }
 
                   }
                 ).catch(
-                  //Create file and recurse function
+                  //Create file and recurse function (could loop infinitely if theres an error in file found code.)
                   function(fileNotFound) {
 
                     console.log("fileNotFound");
@@ -609,7 +713,6 @@ function authenticateUsers(spokenUser, self, callback) {
                       Body: output,
                       Bucket: bucket,
                       Key: fileKey,
-                      Expires: Math.round((new Date()).getTime() / 1000) + authTimeout
                     };
 
                     //only send text after the object has been written
@@ -628,9 +731,8 @@ function authenticateUsers(spokenUser, self, callback) {
 
             //invalid user.
             if (!validUser) {
-              console.log(spokenUser);
               console.log("Invalid user name, please request access from an administrator");
-              self.emit(':tell', "Invalid user name, please request access from an administrator");
+              self.emit(':tell', spokenUser + shortPause + "You are not authorised to call this action, please request access from an administrator");
               return;
             }
           }
@@ -654,13 +756,15 @@ function authenticate(self, slotValuesFilled) {
 
     if (!slotValuesFilled) {
       reject(null);
-    } else {
+    }
+    else {
       authenticateUsers(slots.Users.value, self, function(validated) {
 
         if (validated) {
           //Pass name back if validation passes.
           resolve(slots.Users.value);
-        } else {
+        }
+        else {
           //Pass null to indicate failure
           reject(null);
         }
@@ -687,7 +791,7 @@ function deleteAuthKey(user, self) {
 /*
  * Has alexa to fill required slots at the start of the skill
  */
-function delegateToAlexa(self){
+function delegateToAlexa(self) {
   //Manually request dialog delegate to fill required slots as self.emit(:delegate) would end the session
   if (self.event.request.dialogState == "STARTED" || self.event.request.dialogState == "IN_PROGRESS") {
     self.context.succeed({
@@ -705,6 +809,6 @@ function delegateToAlexa(self){
 /*
  * Validates the value for slots.
  */
-function validateSlot(slot){
+function validateSlot(slot) {
   return typeof slot.value !== 'undefined' && slot.value != null;
 }
