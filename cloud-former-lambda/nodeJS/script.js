@@ -3,7 +3,7 @@
  * Currently Supported Features: Dynamic Create (protected), Dynamic Delete (protected), List Templates, Template Count, Status of CloudFormer stacks, Advanced Help
  *
  * @author rush.soni@capgemini.com
- * @version 1.6.3
+ * @version 1.6.4
  */
 
 'use strict';
@@ -185,18 +185,18 @@ const handlers = {
 
             if (map[optionNumber] != null) {
               var stackName = validateStackName(map[optionNumber].name);
-              var alexaOutputStackName = alexaOutputStackName(map[optionNumber].name);
+              var stackNameOutput = alexaOutputStackName(map[optionNumber].name);
               var theStack = new Stack(stackName);
 
               //Create stack from amazon web services
               theStack.delete(console.log);
 
-              return self.emit(':tell', "your stack, " + alexaOutputStackName + "has been deleted");
+              return self.emit(':tell', "your stack, " + stackNameOutput + "has been deleted");
 
             }
             else {
-              console.error("Cannot find stack with the name " + alexaOutputStackName + "in the list of running stacks.");
-              return self.emit(':tell', "Cannot find stack with the name " + alexaOutputStackName + "in the list of running stacks.");
+              console.error("Cannot find stack with the name " + stackNameOutput + "in the list of running stacks.");
+              return self.emit(':tell', "Cannot find stack with the name " + stackNameOutput + "in the list of running stacks.");
             }
           },
           //Fail: Case where the map returns empty
