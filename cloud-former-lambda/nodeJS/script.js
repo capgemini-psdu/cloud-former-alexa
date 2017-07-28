@@ -3,7 +3,7 @@
  * Currently Supported Features: Dynamic Create (protected), Dynamic Delete (protected), List Templates, Template Count, Status of CloudFormer stacks, Advanced Help
  *
  * @author rush.soni@capgemini.com
- * @version 1.6.2
+ * @version 1.6.3
  */
 
 'use strict';
@@ -350,7 +350,7 @@ const handlers = {
 
     var actionsList = "Create, Delete, List, Count, Status, Option";
 
-    var askSlot = " Please specify one of the option names";
+    var askSlot = shortPause + " Please specify one of the option names";
 
     //Check if the help slot has been filled, otherwise elicit a value.
     if(!validateSlot(slots.HelpTopics)){
