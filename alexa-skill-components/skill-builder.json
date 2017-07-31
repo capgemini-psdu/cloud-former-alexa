@@ -1,0 +1,358 @@
+{
+  "intents": [
+    {
+      "name": "AMAZON.CancelIntent",
+      "samples": []
+    },
+    {
+      "name": "AMAZON.HelpIntent",
+      "samples": []
+    },
+    {
+      "name": "AMAZON.StopIntent",
+      "samples": []
+    },
+    {
+      "name": "CloudFormerCreateIntent",
+      "samples": [
+        "create stack",
+        "invoke stack",
+        "instantiate stack",
+        "make stack",
+        "generate stack",
+        "generate stack {OptionNumber}",
+        "make stack {OptionNumber}",
+        "instantiate stack {OptionNumber}",
+        "deploy stack",
+        "deploy stack {OptionNumber}",
+        "launch stack {OptionNumber}",
+        "create stack {OptionNumber}",
+        "invoke stack {OptionNumber}",
+        "launch stack"
+      ],
+      "slots": [
+        {
+          "name": "OptionNumber",
+          "type": "AMAZON.NUMBER",
+          "samples": [
+            "{OptionNumber}"
+          ]
+        },
+        {
+          "name": "Users",
+          "type": "People",
+          "samples": [
+            "{Users}"
+          ]
+        },
+        {
+          "name": "AuthKey",
+          "type": "AMAZON.NUMBER",
+          "samples": []
+        }
+      ]
+    },
+    {
+      "name": "CloudFormerDeleteIntent",
+      "samples": [
+        "destroy stack {OptionNumber}",
+        "delete the stack {OptionNumber}",
+        "remove stack {OptionNumber}",
+        "incinerate stack {OptionNumber}",
+        "trash stack {OptionNumber}",
+        "recycle stack {OptionNumber}",
+        "stop stack {OptionNumber}",
+        "stop stack",
+        "recycle stack",
+        "trash stack",
+        "incinerate stack",
+        "remove stack",
+        "delete stack",
+        "destroy stack"
+      ],
+      "slots": [
+        {
+          "name": "OptionNumber",
+          "type": "AMAZON.NUMBER",
+          "samples": [
+            "{OptionNumber}"
+          ]
+        },
+        {
+          "name": "Users",
+          "type": "People",
+          "samples": [
+            "{Users}"
+          ]
+        },
+        {
+          "name": "AuthKey",
+          "type": "AMAZON.NUMBER",
+          "samples": []
+        }
+      ]
+    },
+    {
+      "name": "CloudFormerHelpIntent",
+      "samples": [
+        "tell me what i can do",
+        "help",
+        "whats possible with cloud former",
+        "How do i use this action {HelpTopics} ",
+        "help me",
+        "help me please",
+        "can you help me "
+      ],
+      "slots": [
+        {
+          "name": "HelpTopics",
+          "type": "CloudFormerFunctions",
+          "samples": []
+        }
+      ]
+    },
+    {
+      "name": "CloudFormerListTemplateIntent",
+      "samples": [
+        "list available templates",
+        "output available templates",
+        "show me available templates",
+        "list bucket",
+        "output bucket"
+      ],
+      "slots": []
+    },
+    {
+      "name": "CloudFormerOptionInfoIntent",
+      "samples": [
+        "tell me about option {OptionNumber}",
+        "tell me about an option",
+        "what template is option {OptionNumber} "
+      ],
+      "slots": [
+        {
+          "name": "OptionNumber",
+          "type": "AMAZON.NUMBER",
+          "samples": []
+        }
+      ]
+    },
+    {
+      "name": "CloudFormerOutputTemplateCountIntent",
+      "samples": [
+        "give me a template count",
+        "how many templates do i have",
+        "how many templates are there",
+        "tell me how many templates there are",
+        "tell me how many templates i have"
+      ],
+      "slots": []
+    },
+    {
+      "name": "CloudFormerStatusIntent",
+      "samples": [
+        "whats the status",
+        "tell me the status",
+        "show the status",
+        "give me an overview"
+      ],
+      "slots": []
+    }
+  ],
+  "types": [
+    {
+      "name": "CloudFormerFunctions",
+      "values": [
+        {
+          "id": "create",
+          "name": {
+            "value": "create",
+            "synonyms": [
+              "launch",
+              "instantiate",
+              "invoke",
+              "build",
+              "make"
+            ]
+          }
+        },
+        {
+          "id": "delete",
+          "name": {
+            "value": "delete",
+            "synonyms": [
+              "destroy",
+              "breakdown",
+              "terminate"
+            ]
+          }
+        },
+        {
+          "id": "list",
+          "name": {
+            "value": "list",
+            "synonyms": [
+              "output list",
+              "tell me"
+            ]
+          }
+        },
+        {
+          "id": "count",
+          "name": {
+            "value": "count",
+            "synonyms": []
+          }
+        },
+        {
+          "id": "status",
+          "name": {
+            "value": "status",
+            "synonyms": []
+          }
+        },
+        {
+          "id": "option",
+          "name": {
+            "value": "option",
+            "synonyms": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "People",
+      "values": [
+        {
+          "id": null,
+          "name": {
+            "value": "joe",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "bloggs",
+            "synonyms": []
+          }
+        }
+      ]
+    }
+  ],
+  "prompts": [
+    {
+      "id": "Elicit.Intent-CloudFormerCreateIntent.IntentSlot-OptionNumber",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Which cloud formation template would you like me to deploy"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CloudFormerCreateIntent.IntentSlot-Users",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "You will require elevated privileges to call this action, please tell me your name."
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CloudFormerDeleteIntent.IntentSlot-OptionNumber",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "Which cloud formation stack would you like me to delete"
+        }
+      ]
+    },
+    {
+      "id": "Elicit.Intent-CloudFormerDeleteIntent.IntentSlot-Users",
+      "promptVersion": "1.0",
+      "definitionVersion": "1.0",
+      "variations": [
+        {
+          "type": "PlainText",
+          "value": "You will require elevated privileges to call this action, what is your name"
+        }
+      ]
+    }
+  ],
+  "dialog": {
+    "version": "1.0",
+    "intents": [
+      {
+        "name": "CloudFormerCreateIntent",
+        "confirmationRequired": false,
+        "prompts": {},
+        "slots": [
+          {
+            "name": "OptionNumber",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CloudFormerCreateIntent.IntentSlot-OptionNumber"
+            }
+          },
+          {
+            "name": "Users",
+            "type": "People",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CloudFormerCreateIntent.IntentSlot-Users"
+            }
+          },
+          {
+            "name": "AuthKey",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": false,
+            "confirmationRequired": false,
+            "prompts": {}
+          }
+        ]
+      },
+      {
+        "name": "CloudFormerDeleteIntent",
+        "confirmationRequired": false,
+        "prompts": {},
+        "slots": [
+          {
+            "name": "OptionNumber",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CloudFormerDeleteIntent.IntentSlot-OptionNumber"
+            }
+          },
+          {
+            "name": "Users",
+            "type": "People",
+            "elicitationRequired": true,
+            "confirmationRequired": false,
+            "prompts": {
+              "elicit": "Elicit.Intent-CloudFormerDeleteIntent.IntentSlot-Users"
+            }
+          },
+          {
+            "name": "AuthKey",
+            "type": "AMAZON.NUMBER",
+            "elicitationRequired": false,
+            "confirmationRequired": false,
+            "prompts": {}
+          }
+        ]
+      }
+    ]
+  }
+}

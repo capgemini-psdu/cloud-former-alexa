@@ -3,7 +3,7 @@
  * Currently Supported Features: Dynamic Create (protected), Dynamic Delete (protected), List Templates, Template Count, Status of CloudFormer stacks, Advanced Help
  *
  * @author rush.soni@capgemini.com
- * @version 1.6.4
+ * @version 1.6.5
  */
 
 'use strict';
@@ -66,13 +66,15 @@ const mapPromise = new Promise(
 
     if (map != null && map != {}) {
       resolve(map);
-    } else {
+    }
+    else {
 
       var errorMsg;
 
       if (map == {}) {
-        errorMsg = "There are no keys in" + bucket;
-      } else if (map == null) {
+        errorMsg = "There are no keys in " + bucket;
+      }
+      else if (map == null) {
         errorMsg = "The S3 Bucket you specified doesn't exist."
       }
 
@@ -157,6 +159,7 @@ const handlers = {
 
   //Logic for deleteing Stack
   'CloudFormerDeleteIntent': function() {
+
     var self = this;
 
     //Have alexa request required slots to be filled.
@@ -173,10 +176,12 @@ const handlers = {
 
     //Code to execute upon promise resolution
     authenticate(self, slotValuesFilled).then(
+
+      //Successful authentication
       function(user) {
+
         //Function logic for processing mapPromise for Listing maps.
         mapPromise.then(
-
           //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
           function(map) {
 
@@ -184,24 +189,49 @@ const handlers = {
             var optionNumber = self.event.request.intent.slots.OptionNumber.value;
 
             if (map[optionNumber] != null) {
+
               var stackName = validateStackName(map[optionNumber].name);
               var stackNameOutput = alexaOutputStackName(map[optionNumber].name);
               var theStack = new Stack(stackName);
 
-              //Create stack from amazon web services
-              theStack.delete(console.log);
+              getStatus(map).then(
+                //An array of running stacks and there states.
+                function(statusMap) {
 
-              return self.emit(':tell', "your stack, " + stackNameOutput + " has been deleted");
+                  //Stack to delete exists as a running stack
+                  var stackExists = false;
+
+                  for (var i = 0; i < statusMap.length; i++) {
+                    //Stack exists so can be deleted
+                    if (statusMap[i].name == stackName ) {
+                      stackExists = true;
+                      break;
+                    }
+                  }
+
+                  if(!stackExists){
+                    return self.emit(':tell', "The stack you requested isn't running so it can't be deleted");
+                  }
+                  else {
+                    theStack.delete(console.log);
+                    return self.emit(':tell', "your stack, " + stackNameOutput + " has been deleted");
+                  }
+
+                },
+                //No running stacks from cloud former.
+                function(error) {
+                  console.log("CloudFormer hasn't created any stacks.");
+                  return self.emit(':tell', "Cloud Former has not created any stacks, so you cannot delete a stack");
+                }
+              );
 
             }
             else {
-              console.error("Cannot find stack with the name " + stackNameOutput + "in the list of running stacks.");
-              return self.emit(':tell', "Cannot find stack with the name " + stackNameOutput + "in the list of running stacks.");
+              return self.emit(':tell', "Invalid option number");
             }
           },
           //Fail: Case where the map returns empty
           function(errorMsg) {
-
             //log error in console and then have alexa emit the message.
             console.error(errorMsg);
             return self.emit(':tell', errorMsg);
@@ -209,8 +239,9 @@ const handlers = {
           }
         );
       },
+      //Failed authentication
       function(error) {
-        self.emit(':tell', 'Access Denied');
+        return self.emit(':tell', 'Access Denied');
       }
     );
   },
@@ -229,7 +260,7 @@ const handlers = {
       function(map) {
         for (var key in map) {
           //add each [option,name] pair followed by a pause to the output
-          speechOutput += key + "; " + map[key].name + shortPause;
+          speechOutput += key + "; " + alexaOutputStackName(map[key].name) + shortPause;
         }
 
         self.emit(':tell', speechOutput);
@@ -256,7 +287,7 @@ const handlers = {
 
       //Case where the mapPromise has been sucessfully resolved and map contains objects.
       function(map) {
-        self.emit(':tell', 'There are' + map.length - 1 + " cloud formation templates in your bucket");
+        self.emit(':tell', 'There are ' + (map.length - 1) + " cloud formation templates in your bucket");
       },
       //Case where the map returns empty
       function(errorMsg) {
@@ -286,7 +317,7 @@ const handlers = {
               var counter = 1;
 
               for (var stack in statusMap) {
-                speechOutput += shortPause + counter + shortPause + statusMap[stack].name + shortPause + "Status, " + statusMap[stack].state;
+                speechOutput += shortPause + counter + shortPause + alexaOutputTemplateName(statusMap[stack].name) + shortPause + "Status, " + statusMap[stack].state;
                 counter++;
               }
 
@@ -342,7 +373,7 @@ const handlers = {
   },
 
   //Handle help regarding custom cloud former intents
-  'CloudFormerHelpIntent' : function () {
+  'CloudFormerHelpIntent': function() {
 
     var slots = this.event.request.intent.slots;
 
@@ -353,43 +384,43 @@ const handlers = {
     var askSlot = shortPause + " Please specify one of the option names";
 
     //Check if the help slot has been filled, otherwise elicit a value.
-    if(!validateSlot(slots.HelpTopics)){
+    if (!validateSlot(slots.HelpTopics)) {
       this.emit(":elicitSlot", "HelpTopics", message + actionsList + askSlot, null, null);
     }
 
     //Check intents and provide specific help
-    switch(slots.HelpTopics.value){
+    switch (slots.HelpTopics.value) {
 
       case "create":
-        this.emit(':tell', "Cloud Former supports the creation of stacks from templates;"
-          + "invocation of this action will require elevated privilege." + shortPause +
+        this.emit(':tell', "Cloud Former supports the creation of stacks from templates;" +
+          "invocation of this action will require elevated privilege." + shortPause +
           "simply ask Cloud Former to make a stack to invoke this action");
         break;
 
       case "delete":
-        this.emit(':tell', "Cloud Former supports the deletion of stacks from templates, created by cloudformer;"
-          + "invocation of this action will require elevated privilege." + shortPause +
+        this.emit(':tell', "Cloud Former supports the deletion of stacks from templates, created by cloudformer;" +
+          "invocation of this action will require elevated privilege." + shortPause +
           "simply ask Cloud Former to destroy a stack to invoke this action");
         break;
 
       case "count":
-        this.emit(':tell', "You can ask Cloud Former to give you a count of templates in your bucket, created by cloudformer;"
-         + shortPause + "simply ask Cloud Former how many temples are there to invoke this action");
+        this.emit(':tell', "You can ask Cloud Former to give you a count of templates in your bucket, created by cloudformer;" +
+          shortPause + "simply ask Cloud Former how many temples are there to invoke this action");
         break;
 
       case "list":
-        this.emit(':tell', "You can ask Cloud Former to list the option number and the associated name of all templates in your bucket;"
-         + shortPause + "simply ask Cloud Former to list available templates to invoke this action");
+        this.emit(':tell', "You can ask Cloud Former to list the option number and the associated name of all templates in your bucket;" +
+          shortPause + "simply ask Cloud Former to list available templates to invoke this action");
         break;
 
       case "status":
-        this.emit(':tell', "You can ask Cloud Former to give you a list of running stacks which have been created by Cloud Former;"
-         + shortPause + "simply ask Cloud Former to show the status to invoke this action");
+        this.emit(':tell', "You can ask Cloud Former to give you a list of running stacks which have been created by Cloud Former;" +
+          shortPause + "simply ask Cloud Former to show the status to invoke this action");
         break;
 
       case "option":
-        this.emit(':tell', "You can ask Cloud Former for name of a template which is associated to an option number;"
-         + shortPause + "simply ask Cloud Former to tell me about an option to invoke this action");
+        this.emit(':tell', "You can ask Cloud Former for name of a template which is associated to an option number;" +
+          shortPause + "simply ask Cloud Former to tell me about an option to invoke this action");
         break;
 
       default:
@@ -504,7 +535,7 @@ function getStatus(map) {
 
           if (data.StackSummaries[stack].StackName == validateStackName(map[key].name)) {
             cloudFormerStacks.push({
-              'name': replaceAll(data.StackSummaries[stack].StackName, '-', ' '),
+              'name': data.StackSummaries[stack].StackName,
               'state': alexaOutputStackName(data.StackSummaries[stack].StackStatus)
             });
           }
@@ -520,7 +551,6 @@ function getStatus(map) {
     }
 
   );
-
   return statusMap;
 }
 
@@ -529,6 +559,13 @@ function getStatus(map) {
  */
 function validateStackName(name) {
   return replaceAll(name, '_', '-');
+}
+
+/*
+ * Formats cloudformation stack name.
+ */
+function alexaOutputTemplateName(name) {
+  return replaceAll(name, '-', ' ');
 }
 
 /*
@@ -587,8 +624,7 @@ function authenticateUsers(spokenUser, self, callback) {
         if (errorMsg) {
           console.log("Couldn't locate " + userFile + " object from within the " + bucket);
           return false;
-        }
-        else {
+        } else {
           //Read in and parse access file into a JSON object
           var contactsString = response.Body.toString();
           var contacts = JSON.parse(contactsString);
@@ -668,8 +704,7 @@ function authenticateUsers(spokenUser, self, callback) {
                     if (userAuthKey == authCode) {
                       deleteAuthKey(userString, self);
                       callback(true);
-                    }
-                    else {
+                    } else {
                       callback(false);
                     }
 
