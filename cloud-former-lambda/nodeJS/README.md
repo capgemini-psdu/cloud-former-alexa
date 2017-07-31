@@ -14,8 +14,8 @@ This section details how you would set up the Alexa skill for Cloud Former
 
 ### Building the Interaction Model
 1. Select the Launch Skill Builder (Beta) button.
-1. Select </> Code Editor from left hand side menu and proceed to upload the file JSON interaction model located here: __~/cloud-former-alexa/alexa-skills-components/skill-builder.json__".
-1. Scroll down the left hand menu and find the Slot Type called People, within this slot you will add the first names/nicknames (lowercase) of Users to which you will grant elevated priveleges.
+1. Select </> Code Editor from left-hand menu and proceed to upload the file JSON interaction model located here: __~/cloud-former-alexa/alexa-skills-components/skill-builder.json__".
+1. Scroll down the left-hand menu and find the Slot Type called People, within this slot you will add the first names/nicknames (lowercase) of Users to which you will grant elevated priveleges.
 1. Hit save and then build the model, this should take a few minutes.
 
 ### Configuring Endpoints
