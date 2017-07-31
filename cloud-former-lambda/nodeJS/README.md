@@ -112,7 +112,7 @@ __NOTE:__ Authentication requires for the Intent which requires authenticating t
 1. The developer has set up the equivalent of an users/access.json file within S3.
 
 __NOTE:__ The Users slot for the intent can either contain a [Subset](https://en.wikipedia.org/wiki/Subset) of the users in the access file or be a [Perfect Set](https://en.wikipedia.org/wiki/Perfect_set).
-This design approach allows for the developer to grant varying levels of access too different users of the CloudFormer skill; i.e. grantng a set of users access to one intent but not another.
+This design approach allows for the developer to grant varying levels of access too different users of the CloudFormer skill. i.e. Granting a set of users access to one intent but not another.
 
 
 
