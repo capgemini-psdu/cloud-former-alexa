@@ -312,7 +312,7 @@ def unknown_request(number,code,user):
             file.close()
             with open('/tmp/unknown.txt', 'rb') as data:
                 s3.upload_fileobj(data, userbucketname, 'unknown.txt')
-            return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
+            return question("Please specify a stack or template. This is in the form of a number, such as stack two.").reprompt("Please specify a number.")
         else:
             number=requestnumber
     else:
@@ -321,6 +321,18 @@ def unknown_request(number,code,user):
     if request == "StatusRequest":
         response=stack_status(number)
         return statement(str(response))
+
+    if request == "TemplateCost":
+        if user == None:
+            open("/tmp/unknown.txt","w").close()
+            file=open("/tmp/unknown.txt","w")
+            file.write("userrequest")
+            file.close()
+            with open('/tmp/unknown.txt', 'rb') as data:
+                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+            return question("Which user are you?")
+        else:
+            return statement(template_cost(number,user))
 
     if code == None:
         if user == None:
@@ -464,13 +476,10 @@ def security_request(user):
     with open('/tmp/contacts.csv') as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
         for row in readCSV:
-            print(user)
-            print(row[0])
             compare1=str(user)
             compare2=str(row[0])
             if str.lower(compare1)==str.lower(compare2):
                 contactnumber=row[1]
-                print(contactnumber)
                 found=True
                 break
 
@@ -620,9 +629,9 @@ def stack_status_all():
         speech_output="An error has occured. Please check the Alexa configuration."
     return question(speech_output)
 
-#Gives an estimated monthly cost of a template.
+#Gives an estimated monthly cost of a template, which is sent to the user's phone.
 @ask.intent("TemplateCost") #in-development
-def template_cost_initial(number):
+def template_cost_initial(number, user):
     s3 = boto3.resource('s3')
     BUCKET_NAME = userbucketname
     KEY = 'availabletemplates.txt'
@@ -640,7 +649,7 @@ def template_cost_initial(number):
     file=open("/tmp/availabletemplates.txt","r")
     availabletemplates=file.read()
     if availabletemplates == None or availabletemplates == "":
-        return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.")
+        return question("Please request which templates are available before proceeding. This is to prevent launching the incorrect stack.")
 
     s3 = boto3.client('s3')
     open("/tmp/request.txt","w").close()
@@ -657,14 +666,25 @@ def template_cost_initial(number):
         file.close()
         with open('/tmp/unknown.txt', 'rb') as data:
             s3.upload_fileobj(data, userbucketname, 'unknown.txt')
-        return question("Please specify which template you would like the cost for. This is in the form of a number, such as template two.").reprompt("Please specify which stack you would like to launch.")
+        return question("Please specify which template you would like the cost for. This is in the form of a number, such as template two.").reprompt("Please specify a template.")
     else:
-        template_cost_initial(number)
-        return statement(speech_output)
+        pass
 
-def template_cost_initial(number):
+    if user == None:
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("userrequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        return question("Which user are you?")
+    else:
+        return statement(template_cost(number,user))
+
+def template_cost(number, user):
     client = boto3.client('cloudformation')
     s3 = boto3.resource('s3')
+    sns = boto3.client('sns')
     BUCKET_NAME = userbucketname
     KEY = 'availabletemplates.txt'
 
@@ -685,14 +705,45 @@ def template_cost_initial(number):
         speech_output = "The number you specified is invalid."
         return speech_output
 
+    BUCKET_NAME = userbucketname
+    KEY = 'contacts.csv'
+    try:
+        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/contacts.csv')
+    except botocore.exceptions.ClientError as e:
+        print("An error has occured.")
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            return statement("An error has occured. Please check the Alexa configuration.")
+        else:
+            raise
+
+    found=False
+    with open('/tmp/contacts.csv') as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        for row in readCSV:
+            compare1=str(user)
+            compare2=str(row[0])
+            if str.lower(compare1)==str.lower(compare2):
+                contactnumber=row[1]
+                found=True
+                break
+
+    if found == False:
+        print("Error: User not found.")
+        return "User not found."
+    else:
+        pass
+
     try:
         response = client.estimate_template_cost(
         TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(liststring2[int(number)-1])
         )
-        speech_output=response['Url']
+        sns_output=str(response['Url'])
+        sns.publish(PhoneNumber = str(contactnumber), Message=sns_output )
+        speech_output="The cost URL has been sent to your mobile device."
         print(str(speech_output))
     except Exception as e:
-        print('Stack formation failed.')
-        speech_output = "There has been a problem. The instance was not launched successfully."
+        print('Cost request failed.')
+        speech_output = "There has been a problem. The message was not sent successfully."
     return speech_output
 ###

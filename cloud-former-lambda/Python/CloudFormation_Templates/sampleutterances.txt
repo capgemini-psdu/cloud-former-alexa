@@ -62,14 +62,19 @@ StackStatus list status {number}
 StackStatus give me the current status {number}
 StackStatus request stack status {number}
 StackStatusAll list all stacks
-TemplateCost how much will {number} cost
-TemplateCost how much will template {number} cost
-TemplateCost how much will stack {number} cost
-TemplateCost how much will instance {number} cost
-TemplateCost what is the cost of {number}
-TemplateCost what is the cost of template {number}
-TemplateCost how much is stack {number}
-TemplateCost what is the price of stack {number}
-TemplateCost what is the price of {number}
-TemplateCost what is the price of template {number}
-TemplateCost cost {number}
+TemplateCost how much will {number} cost user {user}
+TemplateCost how much will template {number} cost user {user}
+TemplateCost how much will stack {number} cost user {user}
+TemplateCost how much will instance {number} cost user {user}
+TemplateCost what is the cost of {number} user {user}
+TemplateCost what is the cost of template {number} user {user}
+TemplateCost what would be the cost of {number} user {user}
+TemplateCost what would be the cost of template {number} user {user}
+TemplateCost how much is stack {number} user {user}
+TemplateCost what is the price of stack {number} user {user}
+TemplateCost what is the price of {number} user {user}
+TemplateCost what is the price of template {number} user {user}
+TemplateCost what would be the price of stack {number} user {user}
+TemplateCost what would be the price of {number} user {user}
+TemplateCost what would be the price of template {number} user {user}
+TemplateCost cost {number} user {user}
