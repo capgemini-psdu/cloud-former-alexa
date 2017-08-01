@@ -15,8 +15,12 @@ Before getting started with this project, you will require:
 It is also advised to install the necessary module [virtualenv](https://virtualenv.pypa.io/en/stable/), as this will help during the deployment process. This can be achieved by:
 
 ```
+setx PATH "%PATH%;C:\Python27\Scripts"
+
 pip install virtualenv
 ```
+
+Note: The first line enables 'pip' to be used to install Python modules, and you can skip this line if you have used 'pip' on your machine previously. Additionally, if an error occurs, you may need to close and reopen your CMD terminal window after entering the first line before installing virtualenv.
 
 ## Getting Started
 
@@ -32,7 +36,7 @@ First, navigate to the directory where the lambda_function.py file is stored. Op
 userbucketname='s3-bucket-name-example'
 userbucketregion='eu-west-1'
 ```
-Save and exit the file. Then, create a Python Virtual Environment by
+Save and exit the file. Then, create a Python Virtual Environment in the directory you made (eg Alexa_Skill) by
 ```
 virtualenv virtual-env
 ```

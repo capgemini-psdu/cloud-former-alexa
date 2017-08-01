@@ -18,7 +18,7 @@ import time
 import boto3
 import botocore
 import botocore.exceptions
-from flask_ask import Ask, statement, question, session, convert_errors
+from flask_ask import Ask, statement, question, session, convert_errors 
 from flask import Flask, render_template
 from random import randint
 import csv
@@ -352,9 +352,6 @@ def unknown_request(number,code,user):
             return statement(str(response))
         else:
             return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
-    # elif request == "StatusRequest":
-    #     response=stack_status(number)
-    #     return statement(str(response))
     else:
         return statement("An error has occured. Please check the Alexa configuration.")
 
