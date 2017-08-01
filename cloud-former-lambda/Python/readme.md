@@ -214,7 +214,11 @@ The following assumes the invocation name is "Cloud".
 (**This intent is still in development.**)
 
 *	“Alexa, ask Cloud how much stack (number) will cost.”
-*	*“...”*
+*	*“Please specify your name/username.”*
+*	“Jon” / “Jordan” / “(username)”.
+*	*“The cost URL has been sent to your mobile device.”*
+
+This URL directs you to AWS, which will contain the estimated monthly cost of the instance to be launched.
 
 ## Debugging
 
