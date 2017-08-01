@@ -622,8 +622,7 @@ def stack_status_all():
 
 #Gives an estimated monthly cost of a template.
 @ask.intent("TemplateCost") #in-development
-def template_cost(number):
-    client = boto3.client('cloudformation')
+def template_cost_initial(number):
     s3 = boto3.resource('s3')
     BUCKET_NAME = userbucketname
     KEY = 'availabletemplates.txt'
@@ -643,6 +642,42 @@ def template_cost(number):
     if availabletemplates == None or availabletemplates == "":
         return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.")
 
+    s3 = boto3.client('s3')
+    open("/tmp/request.txt","w").close()
+    file=open("/tmp/request.txt","w")
+    file.write("TemplateCost")
+    file.close()
+    with open('/tmp/request.txt', 'rb') as data:
+        s3.upload_fileobj(data, userbucketname, 'request.txt')
+
+    if number == None or number == "?":
+        open("/tmp/unknown.txt","w").close()
+        file=open("/tmp/unknown.txt","w")
+        file.write("numberrequest")
+        file.close()
+        with open('/tmp/unknown.txt', 'rb') as data:
+            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        return question("Please specify which template you would like the cost for. This is in the form of a number, such as template two.").reprompt("Please specify which stack you would like to launch.")
+    else:
+        template_cost_initial(number)
+        return statement(speech_output)
+
+def template_cost_initial(number):
+    client = boto3.client('cloudformation')
+    s3 = boto3.resource('s3')
+    BUCKET_NAME = userbucketname
+    KEY = 'availabletemplates.txt'
+
+    try:
+        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
+    except botocore.exceptions.ClientError as e:
+        print("An error has occured.")
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            return "An error has occured. Please check the Alexa configuration."
+        else:
+            raise
+
     file=open("/tmp/availabletemplates.txt","r")
     liststring=file.read()
     liststring2=ast.literal_eval(liststring)
@@ -660,5 +695,4 @@ def template_cost(number):
         print('Stack formation failed.')
         speech_output = "There has been a problem. The instance was not launched successfully."
     return speech_output
-
 ###

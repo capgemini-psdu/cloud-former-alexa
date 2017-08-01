@@ -228,7 +228,9 @@ or
 The response is invalid.
 ```
 
-then
+then viewing the CloudWatch log for your Lambda function should help diagnose why the skill failed.
+
+If any help is required, please contact the developer for this skill.
 
 ## Built With
 
