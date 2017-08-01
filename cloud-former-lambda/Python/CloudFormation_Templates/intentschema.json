@@ -89,9 +89,13 @@
         {
           "name": "number",
           "type": "AMAZON.NUMBER"
+        },
+        {
+          "name": "user",
+          "type": "user"
         }
       ],
-      "intent": "ExtraClarification"
+      "intent": "TemplateCost"
     }
   ]
 }

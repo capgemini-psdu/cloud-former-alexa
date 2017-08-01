@@ -18,9 +18,9 @@ LaunchInstance launch {number} with code {code} user {user}
 LaunchInstance launch stack {number} with code {code} user {user}
 LaunchInstance launch instance {number} with code {code} user {user}
 LaunchInstance create instance {number} with code {code} user {user}
-LaunchInstance launch an instance
-LaunchInstance create a stack
-LaunchInstance create stack
+LaunchInstance launch an instance {number} {code} {user}
+LaunchInstance create a stack {number} {code} {user}
+LaunchInstance create stack {number} {code} {user}
 LaunchInstance create stack {number} with code {code} user {user}
 TerminateInstance terminate number {number} with code {code} user {user}
 TerminateInstance stop number {number} with code {code} user {user}
@@ -30,10 +30,11 @@ TerminateInstance terminate {number} with code {code}
 TerminateInstance stop {number} with code {code} user {user}
 TerminateInstance delete stack {number} with code {code} user {user}
 TerminateInstance delete instance {number} with code {code} user {user}
-TerminateInstance delete instance
-TerminateInstance delete stack
-TerminateInstance terminate stack
-TerminateInstance terminate instance
+TerminateInstance delete instance {number} {code} {user}
+TerminateInstance delete stack {number} {code} {user}
+TerminateInstance terminate stack {number} {code} {user}
+TerminateInstance terminate instance {number} {code} {user}
+TerminateInstance stop {number} {code} {user}
 RequestInstance list the instances
 RequestInstance name the instances
 RequestInstance list templates
@@ -61,3 +62,19 @@ StackStatus list status {number}
 StackStatus give me the current status {number}
 StackStatus request stack status {number}
 StackStatusAll list all stacks
+TemplateCost how much will {number} cost user {user}
+TemplateCost how much will template {number} cost user {user}
+TemplateCost how much will stack {number} cost user {user}
+TemplateCost how much will instance {number} cost user {user}
+TemplateCost what is the cost of {number} user {user}
+TemplateCost what is the cost of template {number} user {user}
+TemplateCost what would be the cost of {number} user {user}
+TemplateCost what would be the cost of template {number} user {user}
+TemplateCost how much is stack {number} user {user}
+TemplateCost what is the price of stack {number} user {user}
+TemplateCost what is the price of {number} user {user}
+TemplateCost what is the price of template {number} user {user}
+TemplateCost what would be the price of stack {number} user {user}
+TemplateCost what would be the price of {number} user {user}
+TemplateCost what would be the price of template {number} user {user}
+TemplateCost cost {number} user {user}
