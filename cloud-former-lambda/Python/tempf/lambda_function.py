@@ -28,9 +28,11 @@ import ast
 print('Loading function')
 
 ##User-specific constants. These need to be set before running the Alexa skill:
-userbucketname='jlindsey-bucket-eu-west-1'
-userbucketregion='eu-west-1'
-usertimeout=60 ##Modify this setting to change 2FA code timeout time. Shorter time = Increased security.
+userbucketname='jlindsey-bucket-eu-west-1' #This setting MUST be specified!
+userbucketregion='eu-west-1' #(Default = eu-west-1)
+usertimeout=60 ##Modify this setting to change 2FA code timeout time (seconds). Shorter time = Increased security. (Default = 60)
+usercodelength=4 ##Modify this setting to change 2FA code length. Larger code = Increased security. (Default = 4)
+userrollbacktime=5 ##Modify this setting to determine the length of time a stack should be allowed to launch before timing out (minutes). (Default = 5)
 ##
 
 ##Define global variables:
@@ -116,8 +118,6 @@ def launch_instance(number,code,user):
     if number == None or number == "?":
         write_upload_textfile("unknown","numberrequest")
         return question("Please specify which stack you would like to launch. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to launch.")
-    else:
-        pass
 
     write_upload_textfile("number",number)
 
@@ -129,12 +129,9 @@ def launch_instance(number,code,user):
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
-            else:
-                pass
+
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
-    else:
-        pass
 
     securitycheck=security_check(int(code))
     if securitycheck == True:
@@ -152,8 +149,6 @@ def delete_instance(number,code,user):
     if number == None  or number == "?":
         write_upload_textfile("unknown","numberrequest")
         return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
-    else:
-        pass
 
     write_upload_textfile("number",number)
 
@@ -166,12 +161,9 @@ def delete_instance(number,code,user):
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
-            else:
-                pass
+
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
-    else:
-        pass
 
     securitycheck=security_check(int(code))
     if securitycheck == True:
@@ -218,8 +210,6 @@ def unknown_request(number,code,user):
 
     if number == None:
         number = code
-    else:
-        pass
 
     if unknownrequest == "coderequest":
         code=int(number)
@@ -232,8 +222,6 @@ def unknown_request(number,code,user):
         code=None
         number=None
         write_upload_textfile("user",user)
-    else:
-        pass
 
     if number == None:
         if requestnumber == None:
@@ -241,8 +229,6 @@ def unknown_request(number,code,user):
             return question("Please specify a stack or template. This is in the form of a number, such as stack two.").reprompt("Please specify a number.")
         else:
             number=requestnumber
-    else:
-        pass
 
     if request == "StatusRequest":
         response=stack_status(number)
@@ -264,12 +250,9 @@ def unknown_request(number,code,user):
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
-            else:
-                pass
+
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
-    else:
-        pass
 
     if request == "LaunchInstance":
         securitycheck=security_check(int(code))
@@ -304,7 +287,7 @@ def stackformation(number):
         response = client.create_stack(
             StackName='Cloud-Former-'+str(number),
             TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(liststring2[int(number)-1]),
-            TimeoutInMinutes=5,
+            TimeoutInMinutes=userrollbacktime,
             OnFailure='ROLLBACK',
             ClientRequestToken='tokenrequest'+str(number)
         )
@@ -380,7 +363,7 @@ def security_request(user):
         return False
 
     currenttime=time.time()
-    tfacode=str(random_with_N_digits(4))
+    tfacode=str(random_with_N_digits(usercodelength))
     write_upload_textfile("securitycode",tfacode+" "+str(currenttime))
     sns.publish(PhoneNumber = str(contactnumber), Message=str(tfacode) )
     return True
@@ -402,8 +385,6 @@ def security_check(code):
 
     if time.time() > float(currenttime)+usertimeout:
         return False
-    else:
-        pass
 
     if int(tfacode)==int(code):
         security=True
@@ -550,8 +531,6 @@ def template_cost(number, user):
     if found == False:
         print("Error: User not found.")
         return "User not found."
-    else:
-        pass
 
     try:
         response = client.estimate_template_cost(
