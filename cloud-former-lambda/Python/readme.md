@@ -15,7 +15,7 @@ Before getting started with this project, you will require:
 It is also advised to install the necessary module [virtualenv](https://virtualenv.pypa.io/en/stable/), as this will help during the deployment process. This can be achieved by:
 
 ```
-setx PATH "%PATH%;C:\Python27\Scripts"
+setx PATH "%PATH%;C:\Python27\Scripts" (Windows only - Optional)
 
 pip install virtualenv
 ```

@@ -2,23 +2,24 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.8
-#Date: 27/07/2017
-#Changelog: Listing current status of deployed stacks. Ability to describe resources of a given template. Resolved multiple bugs. Added constants to top of file.
-#In-Production: Further Error handling.
-#Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation.
+#Version: 3.9
+#Date: 01/08/2017
+#Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation. Stack descriptions.
+#https://github.com/capgemini-psdu/cloud-former-alexa
+#This code is (C) Copyright by Capgemini UK.
 ##
 
 ##Begin function
 
 from __future__ import print_function
 
+##Imports the required modules for the function to run.
 import json
 import time
 import boto3
 import botocore
 import botocore.exceptions
-from flask_ask import Ask, statement, question, session, convert_errors 
+from flask_ask import Ask, statement, question, session, convert_errors
 from flask import Flask, render_template
 from random import randint
 import csv
@@ -26,14 +27,16 @@ import ast
 
 print('Loading function')
 
-###User-specific constants:
+##User-specific constants. These need to be set before running the Alexa skill.
 userbucketname='jlindsey-bucket-eu-west-1'
 userbucketregion='eu-west-1'
-###
+usertimeout=60 ##Modify this setting to change 2FA code timeout time. Shorter time = Increased security.
+##
 
 app = Flask(__name__)
 ask = Ask(app, '/')
 
+##This is the intent that runs if the Alexa skill is launched without any specific requests.
 @ask.launch
 def launched():
     return question('Welcome to Cloud Former. You can ask me to launch or terminate stacks, along with listing available stacks and templates. Ask me a question to get started.')
@@ -50,6 +53,7 @@ def cancel():
 def session_ended():
     return "{}", 200
 
+##This intent deletes any previous conversation, by clearing the text files stored in S3.
 @ask.intent("ResetSkill")
 def reset_skill():
     s3 = boto3.client('s3')
@@ -69,21 +73,26 @@ def reset_skill():
     speech_output = "Skill reset."
     return statement(speech_output)
 
+##Debug intent: used to test the skills functions and returns a valid response.
 @ask.intent("GetDateIntent")
 def get_current_date():
     speech_output = (time.strftime("%d/%m"))
     return statement(speech_output)
 
+##Debug intent: used to test the skills functions and returns a valid response.
 @ask.intent("GetTimeIntent")
 def get_current_time():
     speech_output = (time.strftime("%H:%M"))
     return statement(speech_output)
 
+##Used to create 'n' digit code for the 2FA verification.
 def random_with_N_digits(n):
     range_start = 10**(n-1)
     range_end = (10**n)-1
     return randint(range_start, range_end)
 
+##Intent used to launch an instance.
+##This skill will check if the user has requested available templates before proceeding, to ensure the user does not launch the wrong instance.
 @ask.intent("LaunchInstance")
 def launch_instance(number,code,user):
     s3 = boto3.resource('s3')
@@ -163,6 +172,9 @@ def launch_instance(number,code,user):
     else:
         return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
 
+##Intent used to delete an instance.
+##This intent is almost identical to the 'launch' intent, but calls the delete function at the end.
+@ask.intent("LaunchInstance")
 @ask.intent("TerminateInstance")
 def delete_instance(number,code,user):
     s3 = boto3.client('s3')
@@ -229,6 +241,10 @@ def delete_instance(number,code,user):
     else:
         return question("Incorrect code, please try again.").reprompt("Please state the code sent to your device.")
 
+##This intent is a 'catch-all', which tries to interpret a response from the user if no request is given.
+##For example, if a user says 'launch stack one', the 'launch' intent will run. When that intent requests a code
+##from the user, the user might simply reply with 'one two three four'. In this case, the intent below is called,
+##which will try to decide how to proceed using textfiles in the S3 bucket.
 @ask.intent("UnknownRequest")
 def unknown_request(number,code,user):
     if number == None and code == None and user == None:
@@ -355,6 +371,7 @@ def unknown_request(number,code,user):
     else:
         return statement("An error has occured. Please check the Alexa configuration.")
 
+##Function used to launch a requested stack from a template in the S3 bucket.
 def stackformation(number):
     client = boto3.client('cloudformation')
     s3 = boto3.resource('s3')
@@ -391,6 +408,7 @@ def stackformation(number):
         speech_output = "There has been a problem. The instance was not launched successfully."
     return speech_output
 
+##Function used to delete a requested stack from a template in the S3 bucket.
 def stackdeletion(number):
     client = boto3.client('cloudformation')
 
@@ -398,6 +416,7 @@ def stackdeletion(number):
         speech_output = "The number you specified is invalid."
         return speech_output
 
+    ##Update the following to add/remove options when listing available stacks on AWS:
     response = client.list_stacks(
         StackStatusFilter=[
             'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS'
@@ -426,8 +445,9 @@ def stackdeletion(number):
         speech_output = "There has been a problem. The instance was not deleted successfully."
     return speech_output
 
+##Function to request a code from the user, using contact details from contacts.csv in the S3 bucket.
 def security_request(user):
-    return True #enable for debugging - warning: this disables all security!
+    #return True #enable for debugging - warning: this disables all security!
     s3 = boto3.resource('s3')
     BUCKET_NAME = userbucketname
     KEY = 'contacts.csv'
@@ -472,8 +492,9 @@ def security_request(user):
     sns.publish(PhoneNumber = str(contactnumber), Message=str(tfacode) )
     return True
 
+##Checks code supplied by the user with stored code in S3 bucket.
 def security_check(code):
-    return True #enable for debugging - warning: this disables all security!
+    #return True #enable for debugging - warning: this disables all security!
     print("Checking...")
     s3 = boto3.resource('s3')
     BUCKET_NAME = userbucketname
@@ -492,7 +513,7 @@ def security_check(code):
     tfacode=words[0]
     currenttime=words[1]
 
-    if time.time() > float(currenttime)+60:
+    if time.time() > float(currenttime)+usertimeout:
         return False
     else:
         pass
@@ -507,6 +528,7 @@ def security_check(code):
     else:
         return False
 
+##Lists available templates which can be launched.
 @ask.intent("RequestInstance")
 def list_stacks():
     s3 = boto3.resource('s3')
@@ -544,7 +566,9 @@ def list_stacks():
 
     return question(speech_output)
 
-@ask.intent("StackStatus") #in-development
+##Lists specific stack resources, if already launched in AWS CloudFormation.
+##This requires specifying the number of the given stack.
+@ask.intent("StackStatus")
 def stack_status_initial(number):
     s3 = boto3.client('s3')
     open("/tmp/request.txt","w").close()
@@ -565,6 +589,7 @@ def stack_status_initial(number):
     speech_output=stack_status(number)
     return statement(speech_output)
 
+##This function is used with the above intent to fetch the resources of launched stacks in AWS.
 def stack_status(number):
     client = boto3.client('cloudformation')
     try:
@@ -577,7 +602,8 @@ def stack_status(number):
         return speech_output
     return speech_output
 
-@ask.intent("StackStatusAll") #in-development
+##Gives a summary of all launched stacks in AWS CloudFormation.
+@ask.intent("StackStatusAll")
 def stack_status_all():
     client = boto3.client('cloudformation')
     try:
