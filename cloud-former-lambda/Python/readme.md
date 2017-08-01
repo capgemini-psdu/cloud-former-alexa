@@ -211,8 +211,6 @@ The following assumes the invocation name is "Cloud".
 
 (Alexa responses are in *italics*.)
 
-(**This intent is still in development.**)
-
 *	“Alexa, ask Cloud how much stack (number) will cost.”
 *	*“Please specify your name/username.”*
 *	“Jon” / “Jordan” / “(username)”.
