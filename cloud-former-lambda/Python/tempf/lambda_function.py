@@ -174,7 +174,6 @@ def launch_instance(number,code,user):
 
 ##Intent used to delete an instance.
 ##This intent is almost identical to the 'launch' intent, but calls the delete function at the end.
-@ask.intent("LaunchInstance")
 @ask.intent("TerminateInstance")
 def delete_instance(number,code,user):
     s3 = boto3.client('s3')
@@ -640,6 +639,11 @@ def template_cost(number):
             raise
 
     file=open("/tmp/availabletemplates.txt","r")
+    availabletemplates=file.read()
+    if availabletemplates == None or availabletemplates == "":
+        return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.")
+
+    file=open("/tmp/availabletemplates.txt","r")
     liststring=file.read()
     liststring2=ast.literal_eval(liststring)
     if int(number)>len(liststring2) or number == None:
@@ -651,6 +655,7 @@ def template_cost(number):
         TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(liststring2[int(number)-1])
         )
         speech_output=response['Url']
+        print(str(speech_output))
     except Exception as e:
         print('Stack formation failed.')
         speech_output = "There has been a problem. The instance was not launched successfully."

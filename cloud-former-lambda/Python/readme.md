@@ -221,8 +221,14 @@ The following assumes the invocation name is "Cloud".
 If you find the skill is not performing as expected, navigate to the Alexa Skill simulator within your [Alexa Skills Kit](https://developer.amazon.com/edw/home.html#/skills). This way, you will be able to see the response returned by the Lambda function. If the response returned is
 
 ```
-
+There was an error calling the remote endpoint, which returned (error here).
 ```
+or
+```
+The response is invalid.
+```
+
+then
 
 ## Built With
 
