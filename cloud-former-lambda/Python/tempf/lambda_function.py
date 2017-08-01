@@ -213,6 +213,9 @@ def unknown_request(number,code,user):
     file3=open("/tmp/unknown.txt","r")
     unknownrequest=file3.read()
 
+    if request == None or request == "" or request == "?":
+        return question("Please make a request first.")
+
     if number == None:
         number = code
     else:
@@ -518,8 +521,6 @@ def template_cost(number, user):
     file=open("/tmp/availabletemplates.txt","r")
     liststring=file.read()
     liststring2=ast.literal_eval(liststring)
-    print(int(number))
-    print(len(liststring2))
     if int(number)>len(liststring2) or number == None:
         speech_output = "The number you specified is invalid."
         return speech_output
@@ -559,7 +560,6 @@ def template_cost(number, user):
         sns_output=str(response['Url'])
         sns.publish(PhoneNumber = str(contactnumber), Message=sns_output )
         speech_output="The cost URL has been sent to your mobile device."
-        print(str(speech_output))
     except Exception as e:
         print('Cost request failed.')
         speech_output = "There has been a problem. The message was not sent successfully."
