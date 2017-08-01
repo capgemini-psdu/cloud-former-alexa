@@ -91,7 +91,7 @@
           "type": "AMAZON.NUMBER"
         }
       ],
-      "intent": "ExtraClarification"
+      "intent": "TemplateCost"
     }
   ]
 }

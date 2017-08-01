@@ -60,7 +60,7 @@ pip install flask
 pip install flask_ask
 ```
 
-**There is currently a bug with the Python module _openssl. This is [being worked on](https://github.com/johnwheeler/flask-ask/issues/167).**
+**There is currently a bug within the Python module flask_ask, specifically regarding _openssl. This is [being worked on](https://github.com/johnwheeler/flask-ask/issues/167).**
 
 (Note, installing boto3 is optional and should already function on AWS Lambda. However, it has been stated here for completeness.)
 
@@ -82,7 +82,7 @@ This .zip file will then need to be uploaded to AWS Lambda.
 
 ### AWS Lambda
 
-(Note, if you are using Zappa to deploy this function, you can skip this entire section.)
+(Note, if you are using Zappa to deploy this function, you can skip any steps not in **bold**.)
 
 To create the Lambda function:
 
@@ -101,7 +101,7 @@ In a new window, navigate to [AWS IAM Roles](https://console.aws.amazon.com/iam/
 * Enable EC2FullAccess, VPCFullAccess, SNSFullAccess, CloudWatchFullAccess.
 * Choose next, and give the role a name, and create the role.
 
-When the role is created, within the role:
+**When the role is created, within the role** (this will still need to be applied to the role automatically created by Zappa, if you use that method):
 
 * Click on 'Create Role Policy' or 'Add inline policy'.
 * Navigate to policy generator.
@@ -143,7 +143,7 @@ and the skill should respond with:
 
 if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
 
-**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, if you write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround.**
+**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround.**
 
 ## Additional Requirements
 
@@ -152,11 +152,11 @@ You will require at least one CloudFormation template in your S3 bucket. An exam
 Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
 
 ```
-john,+441234567890
-bethany,+11234567890
+john,+44XXXXXXXXXX
+bethany,+1XXXXXXXXX
 ```
 
-The names must match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.
+**It is vital that the names match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.**
 
 ## Features and Functionality
 
@@ -172,7 +172,9 @@ The following assumes the invocation name is "Cloud".
 
 (Alexa responses are in *italics*.)
 
-*	“(Alexa, ask Cloud to) List available templates.”
+(**The skill will NOT let you launch a stack without asking for available templates beforehand - to prevent you launching an incorrect and potentially expensive template.**)
+
+*	“(Alexa, ask Cloud to) List available templates.” (**Must do this the first time you use the skill.**)
 *	*“1. Basic instance. 2. Secondary instance.”*
 *	“Launch stack” / “Start stack” / “Launch stack (number)”. (Specifying a number is optional.)
 *	*“Which stack would you like to launch?”*
@@ -188,7 +190,7 @@ The following assumes the invocation name is "Cloud".
 (Alexa responses are in *italics*.)
 
 *	“(Alexa, ask Cloud to) List all stacks.”
-*	*“Name. Cloud-Former-1. Status. CREATE COMPLETE. Name. Cloud-Former-2. Status. CREATE COMPLETE. ……”*
+*	*“Name: Cloud-Former-1. Status: CREATE COMPLETE. Name: Cloud-Former-2. Status: CREATE COMPLETE. ……”*
 *	“Terminate stack” / “Delete stack” / “Delete stack (number)”. (Specifying a number is optional.)
 *	*“Which stack would you like to delete?”*
 *	“One” / “Number one” / “Stack one”.
@@ -205,9 +207,22 @@ The following assumes the invocation name is "Cloud".
 *	“Alexa, ask Cloud to list Stack Status (number).”
 *	*“(Stack status and resources).” Or “That stack either does not exist, or has been deleted.”*
 
+### Estimating Template Costs
+
+(Alexa responses are in *italics*.)
+
+(**This intent is still in development.**)
+
+*	“Alexa, ask Cloud how much stack (number) will cost.”
+*	*“...”*
+
 ## Debugging
 
-.
+If you find the skill is not performing as expected, navigate to the Alexa Skill simulator within your [Alexa Skills Kit](https://developer.amazon.com/edw/home.html#/skills). This way, you will be able to see the response returned by the Lambda function. If the response returned is
+
+```
+
+```
 
 ## Built With
 
@@ -230,4 +245,4 @@ This project is Copyright (c) 2017 by Capgemini UK.
 
 ## Acknowledgments
 
-* .
+* The main nodeJS version of this skill can be found [here](https://github.com/capgemini-psdu/cloud-former-alexa/tree/master/cloud-former-lambda/nodeJS).

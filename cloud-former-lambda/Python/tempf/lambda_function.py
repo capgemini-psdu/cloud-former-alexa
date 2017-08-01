@@ -621,7 +621,39 @@ def stack_status_all():
         speech_output="An error has occured. Please check the Alexa configuration."
     return question(speech_output)
 
-#@ask.intent("TemplateSummary") #in-development
-#def template_summary(name):
+#Gives an estimated monthly cost of a template.
+@ask.intent("TemplateCost") #in-development
+def template_cost(number):
+    client = boto3.client('cloudformation')
+    s3 = boto3.resource('s3')
+    BUCKET_NAME = userbucketname
+    KEY = 'availabletemplates.txt'
+
+    try:
+        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
+    except botocore.exceptions.ClientError as e:
+        print("An error has occured.")
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            return statement("An error has occured. Please check the Alexa configuration.")
+        else:
+            raise
+
+    file=open("/tmp/availabletemplates.txt","r")
+    liststring=file.read()
+    liststring2=ast.literal_eval(liststring)
+    if int(number)>len(liststring2) or number == None:
+        speech_output = "The number you specified is invalid."
+        return speech_output
+
+    try:
+        response = client.estimate_template_cost(
+        TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(liststring2[int(number)-1])
+        )
+        speech_output=response['Url']
+    except Exception as e:
+        print('Stack formation failed.')
+        speech_output = "There has been a problem. The instance was not launched successfully."
+    return speech_output
 
 ###
