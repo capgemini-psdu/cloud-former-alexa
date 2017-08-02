@@ -2,11 +2,11 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 3.9
+#Version: 4.0
 #Date: 01/08/2017
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation. Stack descriptions.
 #https://github.com/capgemini-psdu/cloud-former-alexa
-#This code is (C) Copyright by Capgemini UK.
+#This code is (C) Copyright 2017 by Capgemini UK.
 ##
 
 ##Begin function
@@ -27,14 +27,22 @@ import ast
 
 print('Loading function')
 
-##User-specific constants. These need to be set before running the Alexa skill.
-userbucketname='jlindsey-bucket-eu-west-1'
-userbucketregion='eu-west-1'
-usertimeout=60 ##Modify this setting to change 2FA code timeout time. Shorter time = Increased security.
+##User-specific constants. These need to be set before running the Alexa skill:
+userbucketname='jlindsey-bucket-eu-west-1' #This setting MUST be specified!
+userbucketregion='eu-west-1' #(Default = eu-west-1)
+usertimeout=60 ##Modify this setting to change 2FA code timeout time (seconds). Shorter time = Increased security. (Default = 60)
+usercodelength=4 ##Modify this setting to change 2FA code length. Larger code = Increased security. (Default = 4)
+userrollbacktime=5 ##Modify this setting to determine the length of time a stack should be allowed to launch before timing out (minutes). (Default = 5)
 ##
 
+##Define global variables:
+s3 = boto3.resource('s3')
+client = boto3.client('cloudformation')
+sns = boto3.client('sns')
+BUCKET_NAME = userbucketname
 app = Flask(__name__)
 ask = Ask(app, '/')
+##
 
 ##This is the intent that runs if the Alexa skill is launched without any specific requests.
 @ask.launch
@@ -95,18 +103,9 @@ def random_with_N_digits(n):
 ##This skill will check if the user has requested available templates before proceeding, to ensure the user does not launch the wrong instance.
 @ask.intent("LaunchInstance")
 def launch_instance(number,code,user):
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = userbucketname
-    KEY = 'availabletemplates.txt'
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
-    except botocore.exceptions.ClientError as e:
-        print("An error has occured.")
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-            return statement("An error has occured. Please check the Alexa configuration.")
-        else:
-            raise
+    downloadattempt = download_file("availabletemplates","availabletemplates")
+    if downloadattempt == True:
+        return statement("An error has occured. Please check the Alexa configuration.")
 
     file=open("/tmp/availabletemplates.txt","r")
     availabletemplates=file.read()
@@ -114,56 +113,25 @@ def launch_instance(number,code,user):
     if availabletemplates == None or availabletemplates == "":
         return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.")
 
-    s3 = boto3.client('s3')
-    open("/tmp/request.txt","w").close()
-    file=open("/tmp/request.txt","w")
-    file.write("LaunchInstance")
-    file.close()
-    with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'request.txt')
+    write_upload_textfile("request","LaunchInstance")
 
     if number == None or number == "?":
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("numberrequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        write_upload_textfile("unknown","numberrequest")
         return question("Please specify which stack you would like to launch. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to launch.")
-    else:
-        pass
 
-    open("/tmp/number.txt","w").close()
-    file=open("/tmp/number.txt","w")
-    file.write(number)
-    file.close()
-    with open('/tmp/number.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'number.txt')
+    write_upload_textfile("number",number)
 
     if code == None:
         if user == None:
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("userrequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+            write_upload_textfile("unknown","userrequest")
             return question("Which user are you?")
         else:
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
-            else:
-                pass
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("coderequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+
+            write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
-    else:
-        pass
 
     securitycheck=security_check(int(code))
     if securitycheck == True:
@@ -176,62 +144,26 @@ def launch_instance(number,code,user):
 ##This intent is almost identical to the 'launch' intent, but calls the delete function at the end.
 @ask.intent("TerminateInstance")
 def delete_instance(number,code,user):
-    s3 = boto3.client('s3')
-    open("/tmp/request.txt","w").close()
-    file=open("/tmp/request.txt","w")
-    file.write("DeleteInstance")
-    file.close()
-    with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'request.txt')
+    write_upload_textfile("request","DeleteInstance")
 
     if number == None  or number == "?":
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("numberrequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        write_upload_textfile("unknown","numberrequest")
         return question("Please specify which stack you would like to delete. This is in the form of a number, such as stack two.").reprompt("Please specify which stack you would like to delete.")
-    else:
-        pass
 
-    open("/tmp/number.txt","w").close()
-    file=open("/tmp/number.txt","w")
-    file.write(number)
-    file.close()
-    with open('/tmp/number.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'number.txt')
+    write_upload_textfile("number",number)
 
     if code == None:
         if user == None:
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("userrequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+            write_upload_textfile("unknown","userrequest")
             return question("Which user are you?")
         else:
-            open("/tmp/user.txt","w").close()
-            file=open("/tmp/user.txt","w")
-            file.write(user)
-            file.close()
-            with open('/tmp/user.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'user.txt')
+            write_upload_textfile("user",user)
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
-            else:
-                pass
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("coderequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+
+            write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
-    else:
-        pass
 
     securitycheck=security_check(int(code))
     if securitycheck == True:
@@ -249,8 +181,6 @@ def unknown_request(number,code,user):
     if number == None and code == None and user == None:
         return question("I'm sorry, I did not understand your request or statement. Please try again.")
 
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = userbucketname
     KEY = 'request.txt'
     KEY2 = 'number.txt'
     KEY3 = 'unknown.txt'
@@ -275,48 +205,30 @@ def unknown_request(number,code,user):
     file3=open("/tmp/unknown.txt","r")
     unknownrequest=file3.read()
 
+    if request == None or request == "" or request == "?":
+        return question("Please make a request first.")
+
     if number == None:
         number = code
-    else:
-        pass
 
-    s3 = boto3.client('s3')
     if unknownrequest == "coderequest":
         code=int(number)
         number=None
     elif unknownrequest == "numberrequest":
-        file=open("/tmp/number.txt","w")
-        file.write(number)
-        file.close()
-        with open('/tmp/number.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'number.txt')
+        write_upload_textfile("number",number)
         number=int(number)
         code=None
     elif unknownrequest == "userrequest":
         code=None
         number=None
-        open("/tmp/user.txt","w").close()
-        file=open("/tmp/user.txt","w")
-        file.write(user)
-        file.close()
-        with open('/tmp/user.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'user.txt')
-    else:
-        pass
+        write_upload_textfile("user",user)
 
     if number == None:
         if requestnumber == None:
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("numberrequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+            write_upload_textfile("unknown","numberrequest")
             return question("Please specify a stack or template. This is in the form of a number, such as stack two.").reprompt("Please specify a number.")
         else:
             number=requestnumber
-    else:
-        pass
 
     if request == "StatusRequest":
         response=stack_status(number)
@@ -324,46 +236,23 @@ def unknown_request(number,code,user):
 
     if request == "TemplateCost":
         if user == None:
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("userrequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+            write_upload_textfile("unknown","userrequest")
             return question("Which user are you?")
         else:
             return statement(template_cost(number,user))
 
     if code == None:
         if user == None:
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("userrequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+            write_upload_textfile("unknown","userrequest")
             return question("Which user are you?")
         else:
-            open("/tmp/user.txt","w").close()
-            file=open("/tmp/user.txt","w")
-            file.write(user)
-            file.close()
-            with open('/tmp/user.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'user.txt')
+            write_upload_textfile("user",user)
             requestcheck=security_request(user)
             if requestcheck == False:
                 return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
-            else:
-                pass
-            open("/tmp/unknown.txt","w").close()
-            file=open("/tmp/unknown.txt","w")
-            file.write("coderequest")
-            file.close()
-            with open('/tmp/unknown.txt', 'rb') as data:
-                s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+
+            write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
-    else:
-        pass
 
     if request == "LaunchInstance":
         securitycheck=security_check(int(code))
@@ -384,19 +273,9 @@ def unknown_request(number,code,user):
 
 ##Function used to launch a requested stack from a template in the S3 bucket.
 def stackformation(number):
-    client = boto3.client('cloudformation')
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = userbucketname
-    KEY = 'availabletemplates.txt'
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
-    except botocore.exceptions.ClientError as e:
-        print("An error has occured.")
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-            return statement("An error has occured. Please check the Alexa configuration.")
-        else:
-            raise
+    downloadattempt = download_file("availabletemplates","availabletemplates")
+    if downloadattempt == True:
+        return statement("An error has occured. Please check the Alexa configuration.")
 
     file=open("/tmp/availabletemplates.txt","r")
     liststring=file.read()
@@ -408,7 +287,7 @@ def stackformation(number):
         response = client.create_stack(
             StackName='Cloud-Former-'+str(number),
             TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(liststring2[int(number)-1]),
-            TimeoutInMinutes=5,
+            TimeoutInMinutes=userrollbacktime,
             OnFailure='ROLLBACK',
             ClientRequestToken='tokenrequest'+str(number)
         )
@@ -421,8 +300,6 @@ def stackformation(number):
 
 ##Function used to delete a requested stack from a template in the S3 bucket.
 def stackdeletion(number):
-    client = boto3.client('cloudformation')
-
     if number == None:
         speech_output = "The number you specified is invalid."
         return speech_output
@@ -459,8 +336,6 @@ def stackdeletion(number):
 ##Function to request a code from the user, using contact details from contacts.csv in the S3 bucket.
 def security_request(user):
     #return True #enable for debugging - warning: this disables all security!
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = userbucketname
     KEY = 'contacts.csv'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/contacts.csv')
@@ -487,16 +362,9 @@ def security_request(user):
         print("Error: User not found.")
         return False
 
-    sns = boto3.client('sns')
     currenttime=time.time()
-    tfacode=str(random_with_N_digits(4))
-    open("/tmp/securitycode.txt","w").close()
-    file=open("/tmp/securitycode.txt","w")
-    file.write(tfacode+" "+str(currenttime))
-    file.close()
-    s3 = boto3.client('s3')
-    with open('/tmp/securitycode.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'securitycode.txt')
+    tfacode=str(random_with_N_digits(usercodelength))
+    write_upload_textfile("securitycode",tfacode+" "+str(currenttime))
     sns.publish(PhoneNumber = str(contactnumber), Message=str(tfacode) )
     return True
 
@@ -504,16 +372,10 @@ def security_request(user):
 def security_check(code):
     #return True #enable for debugging - warning: this disables all security!
     print("Checking...")
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = userbucketname
-    KEY = 'securitycode.txt'
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/securitycode.txt')
-    except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-        else:
-            raise
+
+    downloadattempt = download_file("securitycode","securitycode")
+    if downloadattempt == True:
+        return statement("An error has occured. Please check the Alexa configuration.")
 
     file=open("/tmp/securitycode.txt","r")
     text=file.read()
@@ -523,8 +385,6 @@ def security_check(code):
 
     if time.time() > float(currenttime)+usertimeout:
         return False
-    else:
-        pass
 
     if int(tfacode)==int(code):
         security=True
@@ -539,8 +399,6 @@ def security_check(code):
 ##Lists available templates which can be launched.
 @ask.intent("RequestInstance")
 def list_stacks():
-    s3 = boto3.resource('s3')
-    client = boto3.client('cloudformation')
     BUCKET_NAME = s3.Bucket(userbucketname)
     list1=[]
     list2=[]
@@ -562,13 +420,7 @@ def list_stacks():
             list1.append(str(i)+'. '+title.replace("_", " ")+". This launches "+list3.replace("AWS", "")+". ")
             list2.append(file.key)
 
-    s3 = boto3.client('s3')
-    open("/tmp/availabletemplates.txt","w").close()
-    file=open("/tmp/availabletemplates.txt","w")
-    file.write(str(list2))
-    file.close()
-    with open('/tmp/availabletemplates.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'availabletemplates.txt')
+    write_upload_textfile("availabletemplates",str(list2))
 
     speech_output = '. '.join(list1)
 
@@ -578,28 +430,16 @@ def list_stacks():
 ##This requires specifying the number of the given stack.
 @ask.intent("StackStatus")
 def stack_status_initial(number):
-    s3 = boto3.client('s3')
-    open("/tmp/request.txt","w").close()
-    file=open("/tmp/request.txt","w")
-    file.write("StatusRequest")
-    file.close()
-    with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'request.txt')
+    write_upload_textfile("request","StatusRequest")
 
     if number == None or number == "?":
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("numberrequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        write_upload_textfile("unknown","numberrequest")
         return question("Please specify a number with your request for stack status.")
     speech_output=stack_status(number)
     return statement(speech_output)
 
 ##This function is used with the above intent to fetch the resources of launched stacks in AWS.
 def stack_status(number):
-    client = boto3.client('cloudformation')
     try:
         response = client.describe_stack_resources(
             StackName='Cloud-Former-'+str(number),
@@ -613,7 +453,6 @@ def stack_status(number):
 ##Gives a summary of all launched stacks in AWS CloudFormation.
 @ask.intent("StackStatusAll")
 def stack_status_all():
-    client = boto3.client('cloudformation')
     try:
         response = client.list_stacks(
             StackStatusFilter=[
@@ -632,71 +471,33 @@ def stack_status_all():
 #Gives an estimated monthly cost of a template, which is sent to the user's phone.
 @ask.intent("TemplateCost") #in-development
 def template_cost_initial(number, user):
-    s3 = boto3.resource('s3')
-    BUCKET_NAME = userbucketname
-    KEY = 'availabletemplates.txt'
-
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
-    except botocore.exceptions.ClientError as e:
-        print("An error has occured.")
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-            return statement("An error has occured. Please check the Alexa configuration.")
-        else:
-            raise
+    downloadattempt = download_file("availabletemplates","availabletemplates")
+    if downloadattempt == True:
+        return statement("An error has occured. Please check the Alexa configuration.")
 
     file=open("/tmp/availabletemplates.txt","r")
     availabletemplates=file.read()
     if availabletemplates == None or availabletemplates == "":
         return question("Please request which templates are available before proceeding. This is to prevent launching the incorrect stack.")
 
-    s3 = boto3.client('s3')
-    open("/tmp/request.txt","w").close()
-    file=open("/tmp/request.txt","w")
-    file.write("TemplateCost")
-    file.close()
-    with open('/tmp/request.txt', 'rb') as data:
-        s3.upload_fileobj(data, userbucketname, 'request.txt')
+    write_upload_textfile("request","TemplateCost")
 
     if number == None or number == "?":
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("numberrequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        write_upload_textfile("unknown","numberrequest")
         return question("Please specify which template you would like the cost for. This is in the form of a number, such as template two.").reprompt("Please specify a template.")
     else:
-        pass
+        write_upload_textfile("number",number)
 
     if user == None:
-        open("/tmp/unknown.txt","w").close()
-        file=open("/tmp/unknown.txt","w")
-        file.write("userrequest")
-        file.close()
-        with open('/tmp/unknown.txt', 'rb') as data:
-            s3.upload_fileobj(data, userbucketname, 'unknown.txt')
+        write_upload_textfile("unknown","userrequest")
         return question("Which user are you?")
     else:
         return statement(template_cost(number,user))
 
 def template_cost(number, user):
-    client = boto3.client('cloudformation')
-    s3 = boto3.resource('s3')
-    sns = boto3.client('sns')
-    BUCKET_NAME = userbucketname
-    KEY = 'availabletemplates.txt'
-
-    try:
-        s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/availabletemplates.txt')
-    except botocore.exceptions.ClientError as e:
-        print("An error has occured.")
-        if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
-            return "An error has occured. Please check the Alexa configuration."
-        else:
-            raise
+    downloadattempt = download_file("availabletemplates","availabletemplates")
+    if downloadattempt == True:
+        return statement("An error has occured. Please check the Alexa configuration.")
 
     file=open("/tmp/availabletemplates.txt","r")
     liststring=file.read()
@@ -705,7 +506,6 @@ def template_cost(number, user):
         speech_output = "The number you specified is invalid."
         return speech_output
 
-    BUCKET_NAME = userbucketname
     KEY = 'contacts.csv'
     try:
         s3.Bucket(BUCKET_NAME).download_file(KEY, '/tmp/contacts.csv')
@@ -731,8 +531,6 @@ def template_cost(number, user):
     if found == False:
         print("Error: User not found.")
         return "User not found."
-    else:
-        pass
 
     try:
         response = client.estimate_template_cost(
@@ -741,9 +539,32 @@ def template_cost(number, user):
         sns_output=str(response['Url'])
         sns.publish(PhoneNumber = str(contactnumber), Message=sns_output )
         speech_output="The cost URL has been sent to your mobile device."
-        print(str(speech_output))
     except Exception as e:
         print('Cost request failed.')
         speech_output = "There has been a problem. The message was not sent successfully."
     return speech_output
+
+##BELOW ARE FUNCTIONS USED THROUGHOUT THIS CODE, TO INCREASE EFFICIENCY. - In development.
+
+def write_upload_textfile(filename,data):
+    open("/tmp/"+str(filename)+".txt","w").close()
+    file=open("/tmp/"+str(filename)+".txt","w")
+    file.write(str(data))
+    file.close()
+    s3write = boto3.client('s3')
+    with open("/tmp/"+str(filename)+".txt", 'rb') as data:
+        s3write.upload_fileobj(data, userbucketname, str(filename)+'.txt')
+
+def download_file(filename,key):
+    KEY = key+'.txt'
+    try:
+        s3.Bucket(BUCKET_NAME).download_file(KEY, "/tmp/"+str(filename)+".txt")
+    except botocore.exceptions.ClientError as e:
+        print("An error has occured.")
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+            return True
+        else:
+            raise
+
 ###

@@ -22,6 +22,7 @@ LaunchInstance launch an instance {number} {code} {user}
 LaunchInstance create a stack {number} {code} {user}
 LaunchInstance create stack {number} {code} {user}
 LaunchInstance create stack {number} with code {code} user {user}
+LaunchInstance launch stack
 TerminateInstance terminate number {number} with code {code} user {user}
 TerminateInstance stop number {number} with code {code} user {user}
 TerminateInstance terminate {number} with code {code} user {user}
@@ -35,6 +36,7 @@ TerminateInstance delete stack {number} {code} {user}
 TerminateInstance terminate stack {number} {code} {user}
 TerminateInstance terminate instance {number} {code} {user}
 TerminateInstance stop {number} {code} {user}
+TerminateInstance delete stack
 RequestInstance list the instances
 RequestInstance name the instances
 RequestInstance list templates
