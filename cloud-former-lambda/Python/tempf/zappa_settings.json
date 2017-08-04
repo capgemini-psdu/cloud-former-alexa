@@ -5,7 +5,9 @@
         "profile_name": "default",
         "s3_bucket": "jlindsey-bucket-eu-west-1",
         "keep_warm": false,
-        "timeout_seconds": 15,
-        "memory_size": 256
+        "timeout_seconds": 30,
+        "memory_size": 256,
+        "manage_roles": false,
+        "role_name":"tempf-dev-ZappaLambdaExecutionRole"
     }
 }
