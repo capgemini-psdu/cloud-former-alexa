@@ -2,7 +2,8 @@
 
 ### Contents
 
-* .
+* Test
+  * Test
 * .
 * .
 * .
@@ -49,7 +50,6 @@ To obtain the credentials to configure awscli, navigate to [AWS IAM Roles](https
 * Enable: Programmatic Access.
 * Navigate to the next page.
 * Choose 'Attach existing policies directly'.
-* Choose a group name, such as 'Zappa-Deployment-Group'.
 
 At this stage, you must decide which permissions you with to grant to Zappa program. The easiest solution is to provide 'AdministratorAccess', but if you wish to be more restrictive, the following are the minimum essentials:
 
@@ -59,7 +59,7 @@ At this stage, you must decide which permissions you with to grant to Zappa prog
 
 Create and confirm the creation of the user, then note the Access key ID & secret access key, as you will need them momentarily.
 
-It is possible to be increasingly further restrictive, and is a [topic of open discussion.](https://github.com/Miserlou/Zappa/issues/244)
+(It is possible to be increasingly further restrictive, and is a [topic of open discussion.](https://github.com/Miserlou/Zappa/issues/244))
 
 To configure the AWS CLI, type:
 
@@ -129,7 +129,7 @@ Then you have to decide the name of your bucket. You can use the same bucket as 
 s3-bucket-name-example
 ```
 
-You will then be asked the name of your app's function. The default option given is okay to use here.
+You will then be asked the name of your app's function. The default option given is required here.
 
 ```
 lambda_function.app
@@ -147,11 +147,11 @@ Now navigate to the folder where 'lambda_function.py' is stored, and open 'zappa
         "app_function": "lambda_function.app",
         "aws_region": "eu-west-1",
         "profile_name": "default",
-        "s3_bucket": "jlindsey-bucket-eu-west-1",
+        "s3_bucket": "s3-bucket-name-example",
         "keep_warm": false, (ADD THIS LINE)
         "timeout_seconds": 30, (ADD THIS LINE)
         "memory_size": 256, (ADD THIS LINE)
-        "manage_roles": false, (ADD THIS LINE - BUT OMIT THIS LINE IF USING 'AdministratorAccess' WHEN YOU CREATED THE USER ROLE.)
+        "manage_roles": false, (ADD THIS LINE - BUT SET TO 'TRUE' IF USING 'AdministratorAccess' WHEN YOU CREATED THE USER ROLE.)
         "role_name":"alexa-skill-lambda-role-zappa-dev" (ADD THIS LINE)
     }
 }
@@ -159,10 +159,10 @@ Now navigate to the folder where 'lambda_function.py' is stored, and open 'zappa
 
 The additional lines perform the following:
 
-* "keep_warm": Calls the Lambda function every 4 minutes. For development/testing, this isn't necessary, but can be enabled if necessary.
-* "timeout_seconds": How long the Lambda function is allowed to run before timing out. Usually it requires no more than 10 seconds, but the maximum limit is 5 minutes.
+* "keep_warm": Calls the Lambda function every 4 minutes. For development/testing, this isn't necessary, but can be enabled if needed.
+* "timeout_seconds": How long the Lambda function is allowed to run before timing out. Usually this requires no more than 30 seconds, but the maximum limit is 5 minutes.
 * "memory_size": Amount of RAM that is allocated to the function. 256MB is usually plenty, but can be increased if needed.
-* "manage_roles": This prevents Zappa from trying to manage the IAM roles.
+* "manage_roles": This prevents Zappa from trying to manage the IAM roles. **SET THIS TO 'TRUE' IF USING 'AdministratorAccess'.**
 * "role_name": This can be whichever name you prefer, just make sure it is memorable.
 
 ## Deployment
@@ -216,7 +216,7 @@ where 'dev' is the development stage you named when setting up Zappa. This will 
 * Click on 'Add Statement'.
 * Click on 'Next Step', and then 'Apply Policy'.
 
-**Regardless of whether or not you used AdministratorAccess, the process is now identical from this point on:**
+***Regardless of whether or not you used AdministratorAccess, the process is now identical from this point on:***
 
 * When the process has complete, Zappa will provide you with a URL, and this will be used later when setting up the Alexa skill. It will be in the form:
 
@@ -269,7 +269,7 @@ and the skill should respond with:
 
 if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
 
-**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround.**
+**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround. This should be fixed shortly by Amazon directly.**
 
 ## Additional Requirements
 
