@@ -126,9 +126,9 @@ def launch_instance(number,code,user):
             write_upload_textfile("unknown","userrequest")
             return question("Which user are you?")
         else:
-            requestcheck=security_request(user)
+            requestcheck=security_request(user,0)
             if requestcheck == False:
-                return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
+                return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
@@ -158,9 +158,9 @@ def delete_instance(number,code,user):
             return question("Which user are you?")
         else:
             write_upload_textfile("user",user)
-            requestcheck=security_request(user)
+            requestcheck=security_request(user,1)
             if requestcheck == False:
-                return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
+                return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
@@ -241,15 +241,22 @@ def unknown_request(number,code,user):
         else:
             return statement(template_cost(number,user))
 
+    if request == "LaunchInstance":
+        level = 0
+    elif request == "DeleteInstance":
+        level = 1
+    else:
+        level = 2
+
     if code == None:
         if user == None:
             write_upload_textfile("unknown","userrequest")
             return question("Which user are you?")
         else:
             write_upload_textfile("user",user)
-            requestcheck=security_request(user)
+            requestcheck=security_request(user,level)
             if requestcheck == False:
-                return question("User not recognised, please suggest a different user.").reprompt("Please suggest a different user.")
+                return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
@@ -334,7 +341,7 @@ def stackdeletion(number):
     return speech_output
 
 ##Function to request a code from the user, using contact details from contacts.csv in the S3 bucket.
-def security_request(user):
+def security_request(user,level):
     #return True #enable for debugging - warning: this disables all security!
     KEY = 'contacts.csv'
     try:
@@ -347,6 +354,7 @@ def security_request(user):
         else:
             raise
 
+    authentication=False
     found=False
     with open('/tmp/contacts.csv') as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
@@ -355,11 +363,17 @@ def security_request(user):
             compare2=str(row[0])
             if str.lower(compare1)==str.lower(compare2):
                 contactnumber=row[1]
-                found=True
-                break
+                authentication=row[2]
+                if int(authentication)==level:
+                    found=True
+                    break
+                else:
+                    found=False
+                    break
+
 
     if found == False:
-        print("Error: User not found.")
+        print("Error: User not found or not authenticated.")
         return False
 
     currenttime=time.time()
@@ -544,8 +558,7 @@ def template_cost(number, user):
         speech_output = "There has been a problem. The message was not sent successfully."
     return speech_output
 
-##BELOW ARE FUNCTIONS USED THROUGHOUT THIS CODE, TO INCREASE EFFICIENCY. - In development.
-
+#Function used to upload a textfile to the user specified S3 bucket.
 def write_upload_textfile(filename,data):
     open("/tmp/"+str(filename)+".txt","w").close()
     file=open("/tmp/"+str(filename)+".txt","w")
@@ -555,6 +568,7 @@ def write_upload_textfile(filename,data):
     with open("/tmp/"+str(filename)+".txt", 'rb') as data:
         s3write.upload_fileobj(data, userbucketname, str(filename)+'.txt')
 
+#Function used to download a textfile from the user specified S3 bucket.
 def download_file(filename,key):
     KEY = key+'.txt'
     try:

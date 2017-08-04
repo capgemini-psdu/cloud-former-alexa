@@ -272,9 +272,15 @@ You will require at least one CloudFormation template in your S3 bucket. An exam
 Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
 
 ```
-john,+44XXXXXXXXXX
-bethany,+44XXXXXXXXXX
+john,+44XXXXXXXXXX,0
+bethany,+44XXXXXXXXXX,1
 ```
+
+The number at the end, 0 or 1, is the authentication level. *(In-development.)*
+
+* 0: Can create stacks only.
+* 1: Can create and delete stacks.
+* 2: Can neither create and delete stacks.
 
 **It is vital that the names match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.**
 
