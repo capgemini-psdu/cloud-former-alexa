@@ -1,13 +1,5 @@
 # CloudFormation Alexa Python
 
-### Contents
-
-* Test
-  * Test
-* .
-* .
-* .
-
 ### Prerequisites
 
 Before getting started with this project, you will require:
@@ -363,7 +355,7 @@ Then, type
 ```
 zappa update dev
 ```
-and that's it. After Zappa has deployed your code, it should be ready to use immediately. 
+and that's it. After Zappa has deployed your code, it should be ready to use immediately.
 
 ## Debugging
 
