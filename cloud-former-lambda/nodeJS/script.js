@@ -66,15 +66,13 @@ const mapPromise = new Promise(
 
     if (map != null && map != {}) {
       resolve(map);
-    }
-    else {
+    } else {
 
       var errorMsg;
 
       if (map == {}) {
         errorMsg = "There are no keys in " + bucket;
-      }
-      else if (map == null) {
+      } else if (map == null) {
         errorMsg = "The S3 Bucket you specified doesn't exist."
       }
 
@@ -91,9 +89,9 @@ const handlers = {
     var self = this;
 
     //Have alexa request required slots to be filled.
-    delegateToAlexa(self);
-
     var slots = self.event.request.intent.slots;
+
+    delegateToAlexa(self)
 
     //Validate mandatory slots input.
     var optionFilled = validateSlot(slots.OptionNumber);
@@ -104,7 +102,7 @@ const handlers = {
     var slotValuesFilled = optionFilled && userFilled;
 
     //Code to execute upon promise resolution
-    authenticate(self, slotValuesFilled).then(
+    return authenticate(self, slotValuesFilled).then(
       function(user) {
         //Function logic for processing mapPromise for Listing maps.
         mapPromise.then(
@@ -131,12 +129,11 @@ const handlers = {
                 },
               }, console.log);
 
-              return self.emit(':tell', "your stack, " + alexaOutputStackName(map[optionNumber].name) + " has been created ");
+              self.emit(':tell', "your stack, " + alexaOutputStackName(map[optionNumber].name) + " has been created ");
 
-            }
-            else {
+            } else {
               console.error("Item not found within the S3 bucket.");
-              return self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
+              self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
             }
           },
           //Fail: Case where the map returns empty
@@ -144,14 +141,14 @@ const handlers = {
 
             //log error in console and then have alexa emit the message.
             console.error(errorMsg);
-            return self.emit(':tell', errorMsg);
+            self.emit(':tell', errorMsg);
 
           }
         );
 
       },
       function(error) {
-        self.emit(':tell', 'Access Denied');
+        self.emit(':tell', 'Access Denied from Create');
       }
     );
 
@@ -163,9 +160,17 @@ const handlers = {
     var self = this;
 
     //Have alexa request required slots to be filled.
-    delegateToAlexa(self);
-
     var slots = self.event.request.intent.slots;
+
+    //Check if not set, otherwise recursive call overides the slot value.
+    if (!validateSlot(slots.OptionNumber)) {
+      self.emit(':elicitSlot', 'OptionNumber', "Which cloud formation stack would you like me to delete", null, null);
+    }
+
+    //Check if not set, otherwise recursive call overides the slot value.
+    if (!validateSlot(slots.Users)) {
+      self.emit(':elicitSlot', 'Users', "You will require elevated privileges to call this action, what is your name", null, null);
+    }
 
     //Validate mandatory slots input.
     var optionFilled = validateSlot(slots.OptionNumber);
@@ -175,10 +180,12 @@ const handlers = {
     var slotValuesFilled = optionFilled && userFilled;
 
     //Code to execute upon promise resolution
-    authenticate(self, slotValuesFilled).then(
+    return authenticate(self, slotValuesFilled).then(
 
       //Successful authentication
       function(user) {
+
+        console.log("Authenticated User: " + user);
 
         //Function logic for processing mapPromise for Listing maps.
         mapPromise.then(
@@ -203,45 +210,45 @@ const handlers = {
 
                   for (var i = 0; i < statusMap.length; i++) {
                     //Stack exists so can be deleted
-                    if (statusMap[i].name == stackName ) {
+                    if (statusMap[i].name == stackName) {
                       stackExists = true;
                       break;
                     }
                   }
 
-                  if(!stackExists){
+                  if (!stackExists) {
                     return self.emit(':tell', "The stack you requested isn't running so it can't be deleted");
-                  }
-                  else {
+                  } else {
                     theStack.delete(console.log);
-                    return self.emit(':tell', "your stack, " + stackNameOutput + " has been deleted");
+
+                    self.emit(':tell', "your stack, " + stackNameOutput + " has been deleted");
                   }
 
                 },
                 //No running stacks from cloud former.
                 function(error) {
                   console.log("CloudFormer hasn't created any stacks.");
-                  return self.emit(':tell', "Cloud Former has not created any stacks, so you cannot delete a stack");
+                  self.emit(':tell', "Cloud Former has not created any stacks, so you cannot delete a stack");
                 }
               );
 
-            }
-            else {
-              return self.emit(':tell', "Invalid option number");
+            } else {
+              self.emit(':tell', "Invalid option number");
             }
           },
           //Fail: Case where the map returns empty
           function(errorMsg) {
             //log error in console and then have alexa emit the message.
             console.error(errorMsg);
-            return self.emit(':tell', errorMsg);
+            self.emit(':tell', errorMsg);
 
           }
         );
       },
       //Failed authentication
       function(error) {
-        return self.emit(':tell', 'Access Denied');
+        console.log(error);
+        self.emit(':tell', error);
       }
     );
   },
@@ -323,8 +330,7 @@ const handlers = {
 
               return self.emit(':tell', speechOutput);
 
-            }
-            else {
+            } else {
               return self.emit(':tell', 'There are no stacks running which have been created by cloud former');
             }
           },
@@ -597,11 +603,9 @@ function authenticateUsers(spokenUser, self, callback) {
     Name: 'AuthKey'
   };
 
-  //generate an auth key
-  var authKey = auth(authParams);
 
   //Send Auth Code.
-  return sns.createTopic(topicParams, function(err, data) {
+  sns.createTopic(topicParams, function(err, data) {
 
     //Handle initial error in creating topic.
     if (err) {
@@ -636,6 +640,12 @@ function authenticateUsers(spokenUser, self, callback) {
 
             var validUser = false;
 
+            var authUser = null;
+
+            var fileKey = null;
+
+            var authFileParams = null;
+
             //check if the user exists within the allowed users.
             for (var key in contacts.users) {
               //Valid user, begin auth process.
@@ -644,100 +654,15 @@ function authenticateUsers(spokenUser, self, callback) {
                 //validate user.
                 validUser = true;
 
-                var authUser = contacts.users[key];
+                authUser = contacts.users[key];
 
                 //get user specific auth key.
-                var fileKey = userFolder + authUser.name + "_" + "auth_request.json";
+                fileKey = userFolder + authUser.name + "_" + "auth_request.json";
 
-                var authFileParams = {
+                authFileParams = {
                   Bucket: bucket,
                   Key: fileKey
                 };
-
-                //Check if auth file exists, if it doesn't create one and then send the key. if it does exist send the exisiting key
-                var authFilePromise = s3.getObject(authFileParams).promise();
-
-                authFilePromise.then(
-                  function(fileFound) {
-
-                    console.log("fileFound");
-
-                    var keyJSON = JSON.parse(fileFound.Body.toString());
-
-                    var authCode = keyJSON.authKey;
-
-                    //Subscribes authorised user if they haven't already, otherwise gets the default subscription
-                    var subscribeParams = {
-                      Protocol: "sms",
-                      TopicArn: topicKey,
-                      Endpoint: authUser.contactNumber,
-                    };
-
-                    //Subscribe User
-                    sns.subscribe(subscribeParams).send();
-
-                    //POST authKey to user phoneNumber
-                    var smsParams = {
-                      PhoneNumber: authUser.contactNumber,
-                      Message: 'AuthKey : ' + authCode
-                    };
-
-                    //Send verified user an sms containing the authKey
-                    sns.publish(smsParams).send();
-
-                    console.log("Sent Auth Key to device");
-
-                    console.log("Saved AuthKey: " + authCode);
-
-                    var slots = self.event.request.intent.slots;
-
-                    //Check if not set, otherwise recursive call overides the slot value.
-                    if (!validateSlot(slots.AuthKey)) {
-                      self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
-                    }
-
-                    var userAuthKey = self.event.request.intent.slots.AuthKey.value;
-
-                    console.log("Spoken AuthKey: " + userAuthKey);
-
-                    //Accept user if keys match
-                    if (userAuthKey == authCode) {
-                      deleteAuthKey(userString, self);
-                      callback(true);
-                    } else {
-                      callback(false);
-                    }
-
-                  }
-                ).catch(
-                  //Create file and recurse function (could loop infinitely if theres an error in file found code.)
-                  function(fileNotFound) {
-
-                    console.log("fileNotFound");
-
-                    //write authKey with timestamp to s3 bucket;
-                    var authRequest = {
-                      authKey: authKey,
-                      permissions: authUser.permissions
-                    };
-
-                    var output = JSON.stringify(authRequest);
-
-                    var putParams = {
-                      Body: output,
-                      Bucket: bucket,
-                      Key: fileKey,
-                    };
-
-                    //only send text after the object has been written
-                    var keyPutPromise = s3.putObject(putParams).promise();
-
-                    //Upon sucessfully writing json file containing auth key to S3, recall authenticateUsers function
-                    keyPutPromise.then(function(data) {
-                      authenticateUsers(spokenUser, self, callback);
-                    });
-                  }
-                );
 
                 break;
               }
@@ -748,12 +673,125 @@ function authenticateUsers(spokenUser, self, callback) {
               console.log("Invalid user name, please request access from an administrator");
               self.emit(':tell', spokenUser + shortPause + "You are not authorised to call this action, please request access from an administrator");
               return;
+            } else {
+              //Check if auth file exists, if it doesn't create one and then send the key. if it does exist send the exisiting key
+              s3.getObject(authFileParams, function(err, data) {
+
+                //File not found, create file and then recurse.
+                if (err != null && data == null) {
+                  var authKey = auth(authParams);
+
+                  //write authKey with timestamp to s3 bucket;
+                  var authRequest = {
+                    authKey: authKey,
+                    permissions: authUser.permissions
+                  };
+
+                  var output = JSON.stringify(authRequest);
+
+                  var putParams = {
+                    Body: output,
+                    Bucket: bucket,
+                    Key: fileKey,
+                  };
+
+                  //only send text after the object has been written
+                  var keyPutPromise = s3.putObject(putParams).promise();
+
+                  //Upon sucessfully writing json file containing auth key to S3, recall authenticateUsers function
+                  keyPutPromise.then(function(fileWritten) {
+
+                    console.log("fileNotFound");
+
+                    // //Subscribes authorised user if they haven't already, otherwise gets the default subscription
+                    // var subscribeParams = {
+                    //   Protocol: "sms",
+                    //   TopicArn: topicKey,
+                    //   Endpoint: authUser.contactNumber,
+                    // };
+                    //
+                    // //Subscribe User
+                    // sns.subscribe(subscribeParams).send();
+                    //
+                    // //POST authKey to user phoneNumber
+                    // var smsParams = {
+                    //   PhoneNumber: authUser.contactNumber,
+                    //   Message: 'AuthKey : ' + authKey
+                    // };
+                    //
+                    // //Send verified user an sms containing the authKey
+                    // sns.publish(smsParams).send();
+                    //
+
+                    console.log("Sent Auth Key to device");
+
+                    s3.getObject(authFileParams, function(err, data) {
+                      var keyJSON = JSON.parse(data.Body.toString());
+
+                      var authCode = keyJSON.authKey;
+
+                      console.log("Saved AuthKey: " + authCode);
+
+                      var slots = self.event.request.intent.slots;
+
+                      //Check if not set, otherwise recursive call overides the slot value.
+                      if (!validateSlot(slots.AuthKey)) {
+                        self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
+                      }
+
+                      var userAuthKey = self.event.request.intent.slots.AuthKey.value;
+
+                      console.log("Spoken AuthKey: " + userAuthKey);
+
+                      //Accept user if keys match
+                      if (userAuthKey == authCode) {
+                        return callback(true);
+                      }
+
+                      return callback(false);
+                    });
+
+                  });
+                }
+                //File found, verify key
+                else {
+                  console.log("fileFound");
+
+                  var keyJSON = JSON.parse(data.Body.toString());
+
+                  var authCode = keyJSON.authKey;
+
+                  console.log("Saved AuthKey: " + authCode);
+
+                  var slots = self.event.request.intent.slots;
+
+                  //Check if not set, otherwise recursive call overides the slot value.
+                  if (!validateSlot(slots.AuthKey)) {
+                    self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
+                  }
+
+                  var userAuthKey = self.event.request.intent.slots.AuthKey.value;
+
+                  console.log("Spoken AuthKey: " + userAuthKey);
+
+                  //Accept user if keys match
+                  if (userAuthKey == authCode) {
+                    return callback(true);
+                  }
+
+                  return callback(false);
+                }
+
+              });
+
             }
+
           }
         }
-      });
-    }
 
+      });
+
+    }
   });
 }
 
@@ -769,18 +807,15 @@ function authenticate(self, slotValuesFilled) {
     var slots = self.event.request.intent.slots;
 
     if (!slotValuesFilled) {
-      reject(null);
-    }
-    else {
+      reject("User failed authentication");
+    } else {
       authenticateUsers(slots.Users.value, self, function(validated) {
-
         if (validated) {
           //Pass name back if validation passes.
           resolve(slots.Users.value);
-        }
-        else {
+        } else {
           //Pass null to indicate failure
-          reject(null);
+          reject("Invalid access code, access denied.");
         }
 
       });
