@@ -1,6 +1,12 @@
 # CloudFormation Alexa Python
 
-**This readme is not yet complete, and the installation does not currently work!**
+### Contents
+
+* Test
+  * Test
+* .
+* .
+* .
 
 ### Prerequisites
 
@@ -12,7 +18,7 @@ Before getting started with this project, you will require:
 * An Amazon Developer account.
 * Some pre-obtained knowledge on the functionality of AWS [Lambda](https://aws.amazon.com/lambda/) and [Alexa Skills Kit](https://developer.amazon.com/edw/home.html#/skills).
 
-It is also advised to install the necessary module [virtualenv](https://virtualenv.pypa.io/en/stable/), as this will help during the deployment process. This can be achieved by:
+It is also advised to install the necessary module [virtualenv](https://virtualenv.pypa.io/en/stable/), as this will be required during the deployment process. This can be achieved by:
 
 ```
 setx PATH "%PATH%;C:\Python27\Scripts" (Windows only - Optional)
@@ -26,17 +32,61 @@ Note: The first line enables 'pip' to be used to install Python modules, and you
 
 First of all, you will need to create an S3 bucket on Amazon Web Services ([AWS](https://aws.amazon.com/)), with permissions available only to yourself, and not public. This bucket will contain user-data, such as phone numbers for Two-Factor Authentication, and so this is important. You will then need to create a directory on your local device, such as "Alexa_Skill", and download the [lambda_function.py file](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/tempf/lambda_function.py) to that location. It is important that the filename is not altered throughout this process.
 
-## Deployment
+Furthermore, ensure that the region you are in (found at in the top bar of the AWS console) is the same as where you intend the Alexa skill to be used. In this readme, Ireland (eu-west-1) is used, but this can be changed as needed.
 
-There are two methods of deploying the function to AWS Lambda. The first is manually, using [this guide](http://docs.aws.amazon.com/lambda/latest/dg/lambda-python-how-to-create-deployment-package.html). Alternatively, the automated and simplified deployment service [Zappa](https://github.com/Miserlou/Zappa) can be used. If you choose to use Zappa, a detailed guide can be found on the corresponding [Github](https://github.com/Miserlou/Zappa). Alternatively, this readme will demonstrate the manual method, although this method can be more difficult.
+### AWS Credentials
 
-First, navigate to the directory where the lambda_function.py file is stored. Open the file, and then modify the constants at the top of the file with the name and region of your S3 bucket. For example:
+Zappa requires [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/installing.html), the Amazon Command Line Interface. To install this, the following Python module is needed:
+
+```
+pip install awscli
+```
+
+To obtain the credentials to configure awscli, navigate to [AWS IAM Roles](https://console.aws.amazon.com/iam/):
+
+* Navigate to 'users'.
+* Add a user.
+* Choose a username, such as 'Zappa-Deployment-User'.
+* Enable: Programmatic Access.
+* Navigate to the next page.
+* Choose 'Attach existing policies directly'.
+
+At this stage, you must decide which permissions you with to grant to Zappa program. The easiest solution is to provide 'AdministratorAccess', but if you wish to be more restrictive, the following are the minimum essentials:
+
+* APIGatewayAdministrator
+* AWSLambdaFullAccess
+* IAMReadOnlyAccess
+
+(Depending on whether you choose to use AdministratorAccess or minimal permissions, sections of this readme will vary, so please ensure you follow the correct instructions.)
+
+Create and confirm the creation of the user, then note the Access key ID & secret access key, as you will need them momentarily.
+
+(It is possible to be increasingly further restrictive, and is a [topic of open discussion.](https://github.com/Miserlou/Zappa/issues/244))
+
+To configure the AWS CLI, type:
+
+```
+aws configure
+```
+
+* AWS Access Key ID: (Use the key obtained previously.)
+* AWS Secret Access Key: (Use the key obtained previously.)
+* Default region name: (Select the region of your S3 bucket location.)
+* Default output format: (Select a format you prefer, as this does not impact on this installation. Default = None.)
+
+At this point, discard the secret access key, as it is no longer needed.
+
+### Zappa
+
+Due to the dependencies of the Python modules used within lambda_function.py, there is only one method of deploying the function to AWS Lambda. The automated and simplified deployment service [Zappa](https://github.com/Miserlou/Zappa) can be used, and a detailed guide can be found for using Zappa on the corresponding [Github](https://github.com/Miserlou/Zappa). Alternatively, this readme will demonstrate the required method.
+
+First, navigate to the directory where the lambda_function.py file is stored. Open the file, and then modify the constants at the top of the file with the name and region of your S3 bucket. (The region you choose **MUST** match the true location of the S3 bucket, or the Alexa skill will fail.) For example:
 
 ```
 userbucketname='s3-bucket-name-example'
 userbucketregion='eu-west-1'
 ```
-Save and exit the file. Then, create a Python Virtual Environment in the directory you made (eg Alexa_Skill) by
+Save and exit the file. Then, create a Python Virtual Environment (in Terminal/CMD) in the directory you made (eg Alexa_Skill) by
 ```
 virtualenv virtual-env
 ```
@@ -54,70 +104,140 @@ source  virtual-env/bin/activate
 If this is successful, the environment name (virtual-env) will appear on the left in the terminal window, to inform you that you are based within the virtual environment. Next, install the following modules:
 
 ```
+pip install zappa
 pip install boto3
 pip install botocore
 pip install flask
 pip install flask_ask
 ```
 
-**There is currently a bug within the Python module flask_ask, specifically regarding _openssl. This is [being worked on](https://github.com/johnwheeler/flask-ask/issues/167).**
-
 (Note, installing boto3 is optional and should already function on AWS Lambda. However, it has been stated here for completeness.)
 
-Now, to create a deployment package you do the following:
+Now, to initialise Zappa, type:
 
-* First, create .zip file with your Python code you want to upload to AWS Lambda.
-* Add the libraries from preceding activated virtual environment to the .zip file. That is, you add the content of the following directory to the .zip file (note that you add the content of the directory and not the directory itself).
-
-Location (for Windows):
 ```
-virtual-env\Lib\site-packages
-```
-or (for macOS):
-```
-virtual-env/lib/python2.7/site-packages
+zappa init
 ```
 
-This .zip file will then need to be uploaded to AWS Lambda.
+Zappa will ask you what production stage this program is in. You can call this anything, but for this readme, it will be called 'dev' or 'development'.
 
-### AWS Lambda
+```
+dev
+```
 
-(Note, if you are using Zappa to deploy this function, you can skip any steps not in **bold**.)
+Then you have to decide the name of your bucket. You can use the same bucket as the one created previously at the start of this readme. Enter that here.
 
-To create the Lambda function:
+```
+s3-bucket-name-example
+```
 
-* Navigate to the [Lambda Website](https://aws.amazon.com/lambda/), sign in, and then choose to create a Lambda function.
-* Opt for a blank function template.
-* For a trigger, choose 'Alexa Skills Kit'.
-* For Name and description, specify any input you prefer.
-* Runtime: Python 2.7.
-* Code entry type: Choose to upload a .zip file.
-* Role: You will need to create this role separately.
+You will then be asked the name of your app's function. The default option given is required here.
 
-In a new window, navigate to [AWS IAM Roles](https://console.aws.amazon.com/iam/home#/roles):
+```
+lambda_function.app
+```
 
+Then you must decide if you wish to deploy the function globally. This choice is yours, but it is unlikely to be the case. For this readme, 'n' (no) will be chosen.
+
+Then confirm the settings with 'y'.
+
+Now navigate to the folder where 'lambda_function.py' is stored, and open 'zappa_settings.json'. It should look like the code below. Add in the lines with (ADD) attached.
+
+```
+{
+    "dev": {
+        "app_function": "lambda_function.app",
+        "aws_region": "eu-west-1",
+        "profile_name": "default",
+        "s3_bucket": "s3-bucket-name-example",
+        "keep_warm": false, (ADD THIS LINE)
+        "timeout_seconds": 30, (ADD THIS LINE)
+        "memory_size": 256, (ADD THIS LINE)
+        "manage_roles": false, (ADD THIS LINE - BUT SET TO 'TRUE' IF USING 'AdministratorAccess' WHEN YOU CREATED THE USER ROLE.)
+        "role_name":"alexa-skill-lambda-role-zappa-dev" (ADD THIS LINE)
+    }
+}
+```
+
+The additional lines perform the following:
+
+* "keep_warm": Calls the Lambda function every 4 minutes. For development/testing, this isn't necessary, but can be enabled if needed.
+* "timeout_seconds": How long the Lambda function is allowed to run before timing out. Usually this requires no more than 30 seconds, but the maximum limit is 5 minutes.
+* "memory_size": Amount of RAM that is allocated to the function. 256MB is usually plenty, but can be increased if needed.
+* "manage_roles": This prevents Zappa from trying to manage the IAM roles. **SET THIS TO 'TRUE' IF USING 'AdministratorAccess'.**
+* "role_name": This can be whichever name you prefer, just make sure it is memorable.
+
+## Deployment
+
+Before deploying the Lambda function, you must first create the role which the function will use. There are two ways of doing this, depending on whether you are using AdministratorAccess on your user role.
+
+### AWS Lambda - Without Administrator Access
+
+If you are **NOT** using Administrator access on the user role you created previously, do the following:
+
+* You will need to create the IAM role for Zappa to allow CloudFormation to take place. To start this, navigate to [AWS IAM Roles](https://console.aws.amazon.com/iam).
+* Then navigate to 'roles'.
 * Create a custom role.
 * Choose AWS Service Role > AWS Lambda.
-* Enable EC2FullAccess, VPCFullAccess, SNSFullAccess, CloudWatchFullAccess.
+* Enable EC2FullAccess, SNSFullAccess, VPCFullAccess, S3FullAccess, CloudWatchFullAccess.
 * Choose next, and give the role a name, and create the role.
 
-**When the role is created, within the role** (this will still need to be applied to the role automatically created by Zappa, if you use that method):
+* Click on  'Add inline policy' or 'Create role policy', at the bottom of the page.
+* Choose 'Custom policy'.
+* Paste in the contents of [this file.](https://github.com/capgemini-psdu/cloud-former-alexa/tree/master/cloud-former-lambda/Python/CloudFormation_Templates/ZappaPermissions1.json) These are the default permissions assigned by Zappa, but can be further restricted if needed.
+* Repeat this process with a new custom policy, but this time paste the contents of [this file.](https://github.com/capgemini-psdu/cloud-former-alexa/tree/master/cloud-former-lambda/Python/CloudFormation_Templates/ZappaPermissions2.json) This enables the Lambda function to perform Cloud Formation.
 
-* Click on 'Create Role Policy' or 'Add inline policy'.
+Then to create the Lambda function:
+
+* In terminal, still within the virtual environment described earlier, write:
+
+```
+zappa deploy dev
+```
+where 'dev' is the development stage you named when setting up Zappa. This will .zip your code and automatically upload and create your Lambda function for you. **This step will take a few minutes to complete.**
+
+### AWS Lambda - With Administrator Access
+
+Alternatively, if you **ARE** using Administrator access on the user role you created previously, do the following:
+
+* Create the Lambda function using terminal, still within the virtual environment described earlier, write:
+
+```
+zappa deploy dev
+```
+where 'dev' is the development stage you named when setting up Zappa. This will .zip your code and automatically upload and create your Lambda function for you. **This step will take a few minutes to complete.**
+
+* Then click on the [AWS IAM role](https://console.aws.amazon.com/iam) named 'alexa-skill-lambda-role-zappa-dev', which was created automatically by Zappa, but named by you in an earlier step.
+* This role is already permitted to access S3, SNS, but additional policies will need to be manually granted. To do this, click on 'Attach Policy'.
+* Add the following: EC2FullAccess, SNSFullAccess, VPCFullAccess, S3FullAccess, CloudWatchFullAccess. Then attach the policies.
+* Next, click on 'Create Role Policy' or 'Add inline policy'.
 * Navigate to policy generator.
 * Choose AWS Service: AWS CloudFormation.
 * Actions: All Actions.
-* ARN Name: *
+* ARN Name. Type in the box: *
 * Click on 'Add Statement'.
 * Click on 'Next Step', and then 'Apply Policy'.
 
-Now navigate back to the Lambda function.
+***Regardless of whether or not you used AdministratorAccess, the process is now identical from this point on:***
 
-* For role, select the role you just created.
-* Advanced settings: Change the timeout to be at least 10 seconds or greater, to allow the necessary Lambda function to complete. (Note, the maximum timeout is set to 5 minutes by Amazon directly.)
-* Review and create the Lambda function.
+* When the process has completed, Zappa will provide you with a URL, and this will be used later when setting up the Alexa skill. It will be in the form:
 
-The Lambda function is now created and ready.
+```
+https://XXXXXXXXXX.execute-api.XXXXXXXXXX.amazonaws.com/dev
+```
+
+Now navigate to the [Lambda](https://aws.amazon.com/lambda/) function.
+
+* Ensure that your Lambda function is present. It will be in the form 'XXXXXXXXXX-dev', where 'dev' is the development stage set when setting up Zappa previously.
+* If the function is not present, within Zappa, try redeploying the function with:
+
+```
+zappa update dev
+```
+
+This command will automatically update the Lambda function with any changes you make to the code. **You won't have to reconfigure the IAM's roles again.**
+
+The Lambda function is now created and ready to use.
 
 ### Amazon Alexa Skill Setup
 
@@ -129,7 +249,15 @@ Within your Amazon Developer Portal, navigate to the [Alexa Skills Kit](https://
 * For the 'Intent Schema', copy and paste the text in the file /Python/CloudFormation_Templates/intentschema.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/intentschema.json).
 * For the 'Sample Utterances', copy and paste the text in the file /Python/CloudFormation_Templates/sampleutterances.txt on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/sampleutterances.txt).
 * In 'Custom Slot Types', create a slot called 'user', and enter the names of the users who you wish to have access to the Two-Factor Authentication codes. For example, you could use first names, such as 'John', or 'Bethany'.
-* In configuration, choose AWS Lambda ARN, and then paste in the ARN and geographical region of your Lambda function.
+* In configuration, choose HTTPS, and then select the geographical region of your Lambda function. In the text box, paste in the URL Zappa provided to you previously, in the form:
+
+```
+https://XXXXXXXXXX.execute-api.XXXXXXXXXX.amazonaws.com/dev
+```
+
+* For 'Certificate for EU Endpoint', choose 'My development endpoint is a sub-domain of a domain that has a wildcard certificate from a certificate authority'.
+
+The Alexa skill should now be ready for testing...
 
 ### Testing
 
@@ -143,7 +271,7 @@ and the skill should respond with:
 
 if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
 
-**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround.**
+**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround. This should be fixed shortly by Amazon directly.**
 
 ## Additional Requirements
 
@@ -153,7 +281,7 @@ Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in 
 
 ```
 john,+44XXXXXXXXXX
-bethany,+1XXXXXXXXX
+bethany,+44XXXXXXXXXX
 ```
 
 **It is vital that the names match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.**
@@ -180,7 +308,7 @@ The following assumes the invocation name is "Cloud".
 *	*“Which stack would you like to launch?”*
 *	“One” / “Number one” / “Stack one”.
 *	*“Please specify your name/username.”*
-*	“Jon” / “Jordan” / “(username)”.
+*	“Jordan” / “(username)”.
 *	*“You have been sent a 2FA code to your phone. Say that code now.”*
 *	“One two three four” / “(code)”. (There is a 60-second period to do this step.)
 *	*“Stack (number) has been launched.”*
@@ -195,7 +323,7 @@ The following assumes the invocation name is "Cloud".
 *	*“Which stack would you like to delete?”*
 *	“One” / “Number one” / “Stack one”.
 *	*“Please specify your name/username.”*
-*	“Jon” / “Jordan” / “(username)”.
+*	“Jordan” / “(username)”.
 *	*“You have been sent a 2FA code to your phone. Say that code now.”*
 *	“One two three four” / “(code)”. (There is a 60-second period to do this step.)
 *	*“Stack (number) has been deleted.”*
@@ -213,10 +341,29 @@ The following assumes the invocation name is "Cloud".
 
 *	“Alexa, ask Cloud how much stack (number) will cost.”
 *	*“Please specify your name/username.”*
-*	“Jon” / “Jordan” / “(username)”.
+*	“Jordan” / “(username)”.
 *	*“The cost URL has been sent to your mobile device.”*
 
 This URL directs you to AWS, which will contain the estimated monthly cost of the instance to be launched.
+
+## Adding Modifications to the Python Code
+
+If you make any changes to lambda_function.py after the initial deployment with Zappa, updating the code is incredibly simple - and this is the key benefit to Zappa.
+
+First, activate the virtual environment by (for Windows):
+```
+virtual-env\Scripts\activate.bat
+```
+or (for macOS):
+```
+source  virtual-env/bin/activate
+```
+
+Then, type
+```
+zappa update dev
+```
+and that's it. After Zappa has deployed your code, it should be ready to use immediately. 
 
 ## Debugging
 
@@ -238,10 +385,11 @@ If any help is required, please contact the developer for this skill.
 
 * [Flask](http://flask.pocoo.org/) - A microframework for Python.
 * [Flask-Ask](https://github.com/johnwheeler/flask-ask) - Flask extension used to simplify the Python code when building the Alexa skill.
+* [Zappa](https://github.com/Miserlou/Zappa) - A Python 2.7 server-less deployment package.
 
 ## Authors
 
-* **Jordan Lindsey** - *Initial work* - [Github](https://github.com/jlindsey1)
+* **Jordan Lindsey** - [Github](https://github.com/jlindsey1)
 
 See also the [main repository](https://github.com/capgemini-psdu/cloud-former-alexa) for all those who participated in this project.
 
@@ -250,6 +398,8 @@ See also the [main repository](https://github.com/capgemini-psdu/cloud-former-al
 Flask is Copyright (c) 2015 by Armin Ronacher and contributors. Some rights reserved.
 
 Flask-Ask is licensed under the Apache License 2.0.
+
+Zappa is provided under the MIT License.
 
 This project is Copyright (c) 2017 by Capgemini UK.
 
