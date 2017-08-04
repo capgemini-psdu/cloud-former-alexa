@@ -57,6 +57,8 @@ At this stage, you must decide which permissions you with to grant to Zappa prog
 * AWSLambdaFullAccess
 * IAMReadOnlyAccess
 
+(Depending on whether you choose to use AdministratorAccess or minimal permissions, sections of this readme will vary, so please ensure you follow the correct instructions.)
+
 Create and confirm the creation of the user, then note the Access key ID & secret access key, as you will need them momentarily.
 
 (It is possible to be increasingly further restrictive, and is a [topic of open discussion.](https://github.com/Miserlou/Zappa/issues/244))
@@ -183,7 +185,7 @@ If you are **NOT** using Administrator access on the user role you created previ
 * Click on  'Add inline policy' or 'Create role policy', at the bottom of the page.
 * Choose 'Custom policy'.
 * Paste in the contents of [this file.](https://github.com/capgemini-psdu/cloud-former-alexa/tree/master/cloud-former-lambda/Python/CloudFormation_Templates/ZappaPermissions1.json) These are the default permissions assigned by Zappa, but can be further restricted if needed.
-* Repeat this process, but this time paste the contents of [this file.](https://github.com/capgemini-psdu/cloud-former-alexa/tree/master/cloud-former-lambda/Python/CloudFormation_Templates/ZappaPermissions2.json) This enables the Lambda function to perform Cloud Formation.
+* Repeat this process with a new custom policy, but this time paste the contents of [this file.](https://github.com/capgemini-psdu/cloud-former-alexa/tree/master/cloud-former-lambda/Python/CloudFormation_Templates/ZappaPermissions2.json) This enables the Lambda function to perform Cloud Formation.
 
 Then to create the Lambda function:
 
@@ -205,7 +207,7 @@ zappa deploy dev
 ```
 where 'dev' is the development stage you named when setting up Zappa. This will .zip your code and automatically upload and create your Lambda function for you. **This step will take a few minutes to complete.**
 
-* Then click on the role 'alexa-skill-lambda-role-zappa-dev', which was created automatically by Zappa, but named by you in an earlier step.
+* Then click on the [AWS IAM role](https://console.aws.amazon.com/iam) named 'alexa-skill-lambda-role-zappa-dev', which was created automatically by Zappa, but named by you in an earlier step.
 * This role is already permitted to access S3, SNS, but additional policies will need to be manually granted. To do this, click on 'Attach Policy'.
 * Add the following: EC2FullAccess, SNSFullAccess, VPCFullAccess, S3FullAccess, CloudWatchFullAccess. Then attach the policies.
 * Next, click on 'Create Role Policy' or 'Add inline policy'.
@@ -218,7 +220,7 @@ where 'dev' is the development stage you named when setting up Zappa. This will 
 
 ***Regardless of whether or not you used AdministratorAccess, the process is now identical from this point on:***
 
-* When the process has complete, Zappa will provide you with a URL, and this will be used later when setting up the Alexa skill. It will be in the form:
+* When the process has completed, Zappa will provide you with a URL, and this will be used later when setting up the Alexa skill. It will be in the form:
 
 ```
 https://XXXXXXXXXX.execute-api.XXXXXXXXXX.amazonaws.com/dev
@@ -343,6 +345,25 @@ The following assumes the invocation name is "Cloud".
 *	*“The cost URL has been sent to your mobile device.”*
 
 This URL directs you to AWS, which will contain the estimated monthly cost of the instance to be launched.
+
+## Adding Modifications to the Python Code
+
+If you make any changes to lambda_function.py after the initial deployment with Zappa, updating the code is incredibly simple - and this is the key benefit to Zappa.
+
+First, activate the virtual environment by (for Windows):
+```
+virtual-env\Scripts\activate.bat
+```
+or (for macOS):
+```
+source  virtual-env/bin/activate
+```
+
+Then, type
+```
+zappa update dev
+```
+and that's it. After Zappa has deployed your code, it should be ready to use immediately. 
 
 ## Debugging
 
