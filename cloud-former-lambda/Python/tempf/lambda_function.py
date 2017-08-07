@@ -47,7 +47,28 @@ ask = Ask(app, '/')
 ##This is the intent that runs if the Alexa skill is launched without any specific requests.
 @ask.launch
 def launched():
-    return question('Welcome to Cloud Former. You can ask me to launch or terminate stacks, along with listing available stacks and templates. Ask me a question to get started.')
+    return question('Welcome to Cloud Former. You can ask me to launch or terminate stacks, along with listing available stacks and templates. Ask me a question to get started, or for further assistance, ask for help, followed by the topic you require.')
+
+@ask.intent("HelpIntent")
+def help_intent(topic):
+    if topic == "launch" or topic == "launching" or topic == "launching a stack" or topic == "launching a template":
+        return question("To launch a stack, you must first request which templates are available in the S3 bucket. Then, ask me to launch a stack, followed by the corresponding template number. Note, this intent will require elevated priviledges ")
+    elif topic == "delete" or topic == " deleting" or topic == "terminating" or topic == "terminating a stack" or topic == "deleting a stack":
+        return question("To delete a stack, it is advised that you first request which stacks are available in Cloud Formation. Then, ask me to delete a stack, followed by the corresponding number. Note, this intent will require elevated priviledges ")
+    elif topic == "list templates" or topic == " listing templates" or topic == "list":
+        return question("Simply ask me to list available templates, and I will list all Cloud Formation templates in your S3 bucket. I will also list the resources that each template will use.")
+    elif topic == "list stacks" or topic == "listing stacks":
+        return question("If you ask me to list all stacks, I will read out each name, and their formation status. If you ask me about the status of a specific stack, I will read out the name, formation status, and resources used.")
+    elif topic == "two factor authentication" or topic == "authentication":
+        return question("If you wish to create or delete a stack, you will require elevated priviledges. This means that the process won't proceed until a code has been sent to your mobile device. If you need help adding a user to the list of available contacts, a guide is available on the Capgemini github.")
+    elif topic == "cost estimation" or topic == "costs":
+        return question("If you would like an estimate of the monthly cost of any given template, ask me for the cost, followed by the template number. You will then be sent a link to your mobile device, taking you to the Amazon page with the cost estimation available. ")
+    elif topic == "reset" or topic == "reset skill":
+        return question("As this skill remembers your conversation using S3 buckets, you can ask me to reset, which will delete the current conversation.")
+    else:
+        return question('Which task would you like help with? Please respond with the word, help, followed by a particular topic.').reprompt('If you are unsure, you can ask about launching or deleting stacks, requesting templates, listing stacks, or two-factor authentication.')
+
+    #return question('This Python Alexa Skill uses S3 buckets to remember the conversation, so you have a choice. You can state an entire request, or part of a request, and I will complete the rest. For example, if you wish to launch a stack, you can either say Launch stack one as user john, or more simply, say Launch a stack, and I will ask for the rest. ')
 
 @ask.intent('AMAZON.StopIntent')
 def stop():

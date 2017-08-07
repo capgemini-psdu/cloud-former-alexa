@@ -64,6 +64,8 @@ StackStatus list status {number}
 StackStatus give me the current status {number}
 StackStatus request stack status {number}
 StackStatusAll list all stacks
+StackStatusAll list all cloud formation stacks
+StackStatusAll list all launched stacks
 TemplateCost how much will {number} cost user {user}
 TemplateCost how much will template {number} cost user {user}
 TemplateCost how much will stack {number} cost user {user}
@@ -80,3 +82,5 @@ TemplateCost what would be the price of stack {number} user {user}
 TemplateCost what would be the price of {number} user {user}
 TemplateCost what would be the price of template {number} user {user}
 TemplateCost cost {number} user {user}
+HelpIntent help {topic}
+HelpIntent help with {topic}
