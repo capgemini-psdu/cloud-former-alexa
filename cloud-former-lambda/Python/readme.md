@@ -4,7 +4,7 @@
 
 Before getting started with this project, you will require:
 
-* An Amazon Echo, Echo Dot or Echo Tap (or be willing to use the Amazon simulator.)
+* An Amazon Echo or Echo Dot (or be willing to use the Amazon simulator.)
 * An installation of Python 2.7 on your device, found [here](https://www.python.org/downloads/).
 * An Amazon Web Services account.
 * An Amazon Developer account.
