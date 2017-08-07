@@ -2,8 +2,8 @@
 #Alexa Python (2.7) Lambda Skill
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
-#Version: 4.0
-#Date: 01/08/2017
+#Version: 4.1
+#Date: 07/08/2017
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation. Stack descriptions.
 #https://github.com/capgemini-psdu/cloud-former-alexa
 #This code is (C) Copyright 2017 by Capgemini UK.
@@ -364,7 +364,10 @@ def security_request(user,level):
             if str.lower(compare1)==str.lower(compare2):
                 contactnumber=row[1]
                 authentication=row[2]
-                if int(authentication)==level:
+                if int(authentication)==-1:
+                    found=False
+                    break
+                elif int(authentication) >= int(level):
                     found=True
                     break
                 else:

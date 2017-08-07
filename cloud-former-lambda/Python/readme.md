@@ -276,11 +276,11 @@ john,+44XXXXXXXXXX,0
 bethany,+44XXXXXXXXXX,1
 ```
 
-The number at the end, 0 or 1, is the authentication level. *(In-development.)*
+The number at the end is the authentication level. *(In-development.)*
 
 * 0: Can create stacks only.
 * 1: Can create and delete stacks.
-* 2: Can neither create and delete stacks.
+* -1: Can neither create and delete stacks. This user has no authentication.
 
 **It is vital that the names match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.**
 
