@@ -152,7 +152,7 @@ def launch_instance(number,code,user):
                 return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
-            return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
+            return question("You have been sent a code to your mobile device. Please state that code. <break time='5s'/>").reprompt("Please state the code sent to your mobile device.")
 
     securitycheck=security_check(int(code))
     if securitycheck == True:
@@ -185,7 +185,7 @@ def delete_instance(number,code,user):
                 return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
-            return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
+            return question("You have been sent a code to your mobile device. Please state that code. <break time='5s'/>").reprompt("Please state the code sent to your mobile device.")
 
     securitycheck=security_check(int(code))
     if securitycheck == True:
@@ -290,10 +290,10 @@ def unknown_request(number,code,user,response):
             write_upload_textfile("user",user)
             requestcheck=security_request(user,level)
             if requestcheck == False:
-                return question("The user is not recognised, or does not have the required permissions. Please suggest a different user.").reprompt("Please suggest a different user.")
+                return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
-            return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
+            return question("You have been sent a code to your mobile device. Please state that code. <break time='5s'/>").reprompt("Please state the code sent to your mobile device.")
 
     if request == "LaunchInstance":
         securitycheck=security_check(int(code))
@@ -498,7 +498,17 @@ def stack_status(number):
         )
         speech_output="Name. "+response['StackResources'][0]['StackName'].replace("-", " ")+" . Resource. "+response['StackResources'][0]['ResourceType'].replace("::", " ")+" . Status. "+response['StackResources'][0]['ResourceStatus'].replace("_", " ")
     except Exception as e:
-        speech_output="That stack either does not exist, or has been deleted."
+        response = client.list_stacks(
+            StackStatusFilter=[
+                'CREATE_IN_PROGRESS','CREATE_FAILED','CREATE_COMPLETE','ROLLBACK_IN_PROGRESS','ROLLBACK_FAILED','ROLLBACK_COMPLETE','DELETE_IN_PROGRESS','DELETE_FAILED','UPDATE_IN_PROGRESS','UPDATE_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_COMPLETE','UPDATE_ROLLBACK_IN_PROGRESS','UPDATE_ROLLBACK_FAILED','UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS','UPDATE_ROLLBACK_COMPLETE','REVIEW_IN_PROGRESS'
+            ]
+        )
+        numberofstacks=len(response['StackSummaries'])
+        counter=0
+        for i in range(numberofstacks):
+            if "Cloud-Former-" in response['StackSummaries'][i-1]['StackName']:
+                counter+=1
+        speech_output="That stack either does not exist, or has been deleted. There are only "+str(counter)+" stacks available."
         return speech_output
     return speech_output
 
