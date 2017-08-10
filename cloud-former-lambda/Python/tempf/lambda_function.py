@@ -200,7 +200,7 @@ def delete_instance(number,code,user):
 ##which will try to decide how to proceed using textfiles in the S3 bucket.
 @ask.intent("UnknownRequest")
 def unknown_request(number,code,user,response):
-    if number == None and code == None and user == None:
+    if number == None and code == None and user == None and response == None:
         return question("I'm sorry, I did not understand your request or statement. Please try again.").reprompt("If you are unsure, try asking for help.")
 
     KEY = 'request.txt'
@@ -224,10 +224,12 @@ def unknown_request(number,code,user,response):
     request=words[0]
     currenttime=words[1]
 
-    if response != "yes":
+    if response == "no":
+        return question("To start again, try asking me to create or delete a stack. To reset the conversation entirely, ask me to reset skill.").reprompt("If you are unsure, try asking for help.")
+    elif response != "yes" and response != "no":
         if time.time() > float(currenttime)+userrequesttimeout:
             return question("It has been more than five minutes since your last request. Are you sure you want to proceed?")
-    elif response = "yes":
+    elif response == "yes":
         currenttime=time.time()
         write_upload_textfile("request",request+" "+str(currenttime))
 

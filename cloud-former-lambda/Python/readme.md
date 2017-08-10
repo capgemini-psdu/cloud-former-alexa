@@ -265,6 +265,7 @@ costs
 reset
 reset skill
 ```
+**These are the topics you can ask for help for within the Alexa skill.**
 * In configuration, choose HTTPS, and then select the geographical region of your Lambda function. In the text box, paste in the URL Zappa provided to you previously, in the form:
 
 ```

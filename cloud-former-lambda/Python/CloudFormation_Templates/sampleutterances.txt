@@ -85,3 +85,4 @@ TemplateCost what would be the price of template {number} user {user}
 TemplateCost cost {number} user {user}
 HelpIntent help {topic}
 HelpIntent help with {topic}
+HelpIntent help
