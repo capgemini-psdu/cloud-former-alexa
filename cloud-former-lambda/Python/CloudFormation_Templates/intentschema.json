@@ -86,6 +86,10 @@
         {
           "name": "user",
           "type": "user"
+        },
+        {
+          "name": "response",
+          "type": "response"
         }
       ],
       "intent": "UnknownRequest"

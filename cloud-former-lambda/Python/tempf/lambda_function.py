@@ -3,7 +3,7 @@
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
 #Version: 4.1
-#Date: 07/08/2017
+#Date: 10/08/2017
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation. Stack descriptions.
 #https://github.com/capgemini-psdu/cloud-former-alexa
 #This code is (C) Copyright 2017 by Capgemini UK.
@@ -33,6 +33,7 @@ userbucketregion='eu-west-1' #(Default = eu-west-1)
 usertimeout=60 ##Modify this setting to change 2FA code timeout time (seconds). Shorter time = Increased security. (Default = 60)
 usercodelength=4 ##Modify this setting to change 2FA code length. Larger code = Increased security. (Default = 4)
 userrollbacktime=5 ##Modify this setting to determine the length of time a stack should be allowed to launch before timing out (minutes). (Default = 5)
+userrequesttimeout=300 ##Modify yhis setting to change request timeout time (seconds). (Default = 300)
 ##
 
 ##Define global variables:
@@ -67,8 +68,6 @@ def help_intent(topic):
         return question("As this skill remembers your conversation using S3 buckets, you can ask me to reset, which will delete the current conversation.")
     else:
         return question('Which task would you like help with? Please respond with the word, help, followed by a particular topic.').reprompt('If you are unsure, you can ask about launching or deleting stacks, requesting templates, listing stacks, or two-factor authentication.')
-
-    #return question('This Python Alexa Skill uses S3 buckets to remember the conversation, so you have a choice. You can state an entire request, or part of a request, and I will complete the rest. For example, if you wish to launch a stack, you can either say Launch stack one as user john, or more simply, say Launch a stack, and I will ask for the rest. ')
 
 @ask.intent('AMAZON.StopIntent')
 def stop():
@@ -132,9 +131,10 @@ def launch_instance(number,code,user):
     availabletemplates=file.read()
 
     if availabletemplates == None or availabletemplates == "":
-        return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.")
+        return question("Please request which templates are available before proceeding. This is to prevent lanching the incorrect stack.").reprompt("You can do this by asking me to, list available templates.")
 
-    write_upload_textfile("request","LaunchInstance")
+    currenttime=time.time()
+    write_upload_textfile("request","LaunchInstance"+" "+str(currenttime))
 
     if number == None or number == "?":
         write_upload_textfile("unknown","numberrequest")
@@ -145,7 +145,7 @@ def launch_instance(number,code,user):
     if code == None:
         if user == None:
             write_upload_textfile("unknown","userrequest")
-            return question("Which user are you?")
+            return question("To authorise this request, please state your name, and you will be sent a code.")
         else:
             requestcheck=security_request(user,0)
             if requestcheck == False:
@@ -165,7 +165,8 @@ def launch_instance(number,code,user):
 ##This intent is almost identical to the 'launch' intent, but calls the delete function at the end.
 @ask.intent("TerminateInstance")
 def delete_instance(number,code,user):
-    write_upload_textfile("request","DeleteInstance")
+    currenttime=time.time()
+    write_upload_textfile("request","DeleteInstance"+" "+str(currenttime))
 
     if number == None  or number == "?":
         write_upload_textfile("unknown","numberrequest")
@@ -176,7 +177,7 @@ def delete_instance(number,code,user):
     if code == None:
         if user == None:
             write_upload_textfile("unknown","userrequest")
-            return question("Which user are you?")
+            return question("To authorise this request, please state your name, and you will be sent a code.")
         else:
             write_upload_textfile("user",user)
             requestcheck=security_request(user,1)
@@ -198,9 +199,9 @@ def delete_instance(number,code,user):
 ##from the user, the user might simply reply with 'one two three four'. In this case, the intent below is called,
 ##which will try to decide how to proceed using textfiles in the S3 bucket.
 @ask.intent("UnknownRequest")
-def unknown_request(number,code,user):
+def unknown_request(number,code,user,response):
     if number == None and code == None and user == None:
-        return question("I'm sorry, I did not understand your request or statement. Please try again.")
+        return question("I'm sorry, I did not understand your request or statement. Please try again.").reprompt("If you are unsure, try asking for help.")
 
     KEY = 'request.txt'
     KEY2 = 'number.txt'
@@ -213,12 +214,22 @@ def unknown_request(number,code,user):
         print("An error has occured.")
         if e.response['Error']['Code'] == "404":
             print("The object does not exist.")
-            return statement("An error has occured. Please check the Alexa configuration.")
+            return statement("An error has occured with the S3 buckets. Please check the Alexa configuration, or contact an Administrator.")
         else:
             raise
 
     file=open("/tmp/request.txt","r")
-    request=file.read()
+    request1=file.read()
+    words = request1.split(" ")
+    request=words[0]
+    currenttime=words[1]
+
+    if response != "yes":
+        if time.time() > float(currenttime)+userrequesttimeout:
+            return question("It has been more than five minutes since your last request. Are you sure you want to proceed?")
+    elif response = "yes":
+        currenttime=time.time()
+        write_upload_textfile("request",request+" "+str(currenttime))
 
     file2=open("/tmp/number.txt","r")
     requestnumber=file2.read()
@@ -227,7 +238,7 @@ def unknown_request(number,code,user):
     unknownrequest=file3.read()
 
     if request == None or request == "" or request == "?":
-        return question("Please make a request first.")
+        return question("Please make a request before stating any additional information.").reprompt("If you are unsure, try asking for help.")
 
     if number == None:
         number = code
@@ -247,7 +258,7 @@ def unknown_request(number,code,user):
     if number == None:
         if requestnumber == None:
             write_upload_textfile("unknown","numberrequest")
-            return question("Please specify a stack or template. This is in the form of a number, such as stack two.").reprompt("Please specify a number.")
+            return question("Please specify a stack or template. This is in the form of a number, such as stack two.").reprompt("Please specify a number to proceed.")
         else:
             number=requestnumber
 
@@ -258,7 +269,7 @@ def unknown_request(number,code,user):
     if request == "TemplateCost":
         if user == None:
             write_upload_textfile("unknown","userrequest")
-            return question("Which user are you?")
+            return question("To allow Alexa to send you a link to the template cost, please state your name.")
         else:
             return statement(template_cost(number,user))
 
@@ -272,12 +283,12 @@ def unknown_request(number,code,user):
     if code == None:
         if user == None:
             write_upload_textfile("unknown","userrequest")
-            return question("Which user are you?")
+            return question("To authorise this request, please state your name, and you will be sent a code.")
         else:
             write_upload_textfile("user",user)
             requestcheck=security_request(user,level)
             if requestcheck == False:
-                return question("The user is not recognised, or does not have the required permissions, please suggest a different user.").reprompt("Please suggest a different user.")
+                return question("The user is not recognised, or does not have the required permissions. Please suggest a different user.").reprompt("Please suggest a different user.")
 
             write_upload_textfile("unknown","coderequest")
             return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
@@ -468,7 +479,8 @@ def list_stacks():
 ##This requires specifying the number of the given stack.
 @ask.intent("StackStatus")
 def stack_status_initial(number):
-    write_upload_textfile("request","StatusRequest")
+    currenttime=time.time()
+    write_upload_textfile("request","StatusRequest"+" "+str(currenttime))
 
     if number == None or number == "?":
         write_upload_textfile("unknown","numberrequest")
@@ -518,7 +530,8 @@ def template_cost_initial(number, user):
     if availabletemplates == None or availabletemplates == "":
         return question("Please request which templates are available before proceeding. This is to prevent launching the incorrect stack.")
 
-    write_upload_textfile("request","TemplateCost")
+    currenttime=time.time()
+    write_upload_textfile("request","TemplateCost"+" "+str(currenttime))
 
     if number == None or number == "?":
         write_upload_textfile("unknown","numberrequest")

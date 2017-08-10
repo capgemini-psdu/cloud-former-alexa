@@ -241,6 +241,7 @@ Within your Amazon Developer Portal, navigate to the [Alexa Skills Kit](https://
 * For the 'Intent Schema', copy and paste the text in the file /Python/CloudFormation_Templates/intentschema.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/intentschema.json).
 * For the 'Sample Utterances', copy and paste the text in the file /Python/CloudFormation_Templates/sampleutterances.txt on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/sampleutterances.txt).
 * In 'Custom Slot Types', create a slot called 'user', and enter the names of the users who you wish to have access to the Two-Factor Authentication codes. For example, you could use first names, such as 'John', or 'Bethany'.
+* In 'Custom Slot Types', create a slot called 'response', and enter two responses, stating 'yes' and 'no'.
 * In 'Custom Slot Types', create a slot called 'topic', and copy the following:
 ```
 launch
