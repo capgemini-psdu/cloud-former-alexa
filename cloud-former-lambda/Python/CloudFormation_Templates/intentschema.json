@@ -4,9 +4,6 @@
       "intent": "AMAZON.CancelIntent"
     },
     {
-      "intent": "ResetSkill"
-    },
-    {
       "intent": "HelpIntent",
       "slots": [
         {
@@ -16,7 +13,19 @@
       ]
     },
     {
+      "intent": "ResetSkill"
+    },
+    {
       "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "TemplateName",
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
     },
     {
       "intent": "GetDateIntent"
@@ -59,6 +68,12 @@
       "intent": "TerminateInstance"
     },
     {
+      "slots": [
+        {
+          "name": "response",
+          "type": "response"
+        }
+      ],
       "intent": "RequestInstance"
     },
     {
@@ -90,6 +105,10 @@
         {
           "name": "response",
           "type": "response"
+        },
+        {
+          "name": "topic",
+          "type": "topic"
         }
       ],
       "intent": "UnknownRequest"

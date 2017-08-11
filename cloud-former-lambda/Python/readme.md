@@ -253,17 +253,17 @@ deleting
 terminating
 terminating a stack
 deleting a stack
+list
 list templates
 listing templates
-list
+requesting templates
 list stacks
 listing stacks
-two factor authentication
 authentication
 cost estimation
 costs
-reset
-reset skill
+resetting
+resetting the skill
 ```
 **These are the topics you can ask for help for within the Alexa skill.**
 * In configuration, choose HTTPS, and then select the geographical region of your Lambda function. In the text box, paste in the URL Zappa provided to you previously, in the form:
@@ -292,7 +292,7 @@ if the skill is functioning. If you receive an error, investigate the CloudWatch
 
 ## Additional Requirements
 
-You will require at least one CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
+You will require at least one **JSON** CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
 
 Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
 
@@ -317,7 +317,7 @@ The following assumes the invocation name is "Cloud".
 
 *	“Alexa, ask Cloud to…” for a specific question, or: “Alexa, launch Cloud” if you do not have a specific question.
 (You can invoke this at any time if the skill pauses, and it will remember where you left off.)
-*	To reset the conversation, say “Alexa, ask Cloud to reset skill.”
+*	To reset the conversation, say “Alexa, ask Cloud to reset conversation.”
 
 ### Creating a Stack
 
