@@ -19,6 +19,9 @@
       "intent": "AMAZON.StopIntent"
     },
     {
+      "intent": "TemplateCount"
+    },
+    {
       "intent": "TemplateName",
       "slots": [
         {

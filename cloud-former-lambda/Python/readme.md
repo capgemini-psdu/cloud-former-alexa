@@ -253,7 +253,7 @@ deleting
 terminating
 terminating a stack
 deleting a stack
-list
+listing
 list templates
 listing templates
 requesting templates
@@ -292,7 +292,7 @@ if the skill is functioning. If you receive an error, investigate the CloudWatch
 
 ## Additional Requirements
 
-You will require at least one **JSON** CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
+You will require at least one **.json or .yaml (experimental)** CloudFormation template in your S3 bucket (other file-types are ignored). An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
 
 Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
 

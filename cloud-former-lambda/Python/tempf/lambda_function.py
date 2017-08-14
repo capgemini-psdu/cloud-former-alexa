@@ -3,7 +3,7 @@
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
 #Version: 4.1
-#Date: 10/08/2017
+#Date: 14/08/2017
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation. Stack descriptions.
 #https://github.com/capgemini-psdu/cloud-former-alexa
 #This code is (C) Copyright 2017 by Capgemini UK.
@@ -65,25 +65,25 @@ def help_intent_main(topic):
     print(topic)
     open("/tmp/blank.txt","w").close()
     if topic == "launch" or topic == "launching" or topic == "launching a stack" or topic == "launching a template":
-        write_upload_textfile("request","")
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "To launch a stack, you must first request which templates are available in the S3 bucket. Then, ask me to launch a stack, followed by the corresponding template number. Note, this intent will require elevated priviledges."
     elif topic == "delete" or topic == " deleting" or topic == "terminating" or topic == "terminating a stack" or topic == "deleting a stack":
-        write_upload_textfile("request","")
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "To remove a cloud formation stack, ask me to delete a stack, followed by the corresponding number. Note, this intent will require elevated priviledges."
-    elif topic == "listing templates" or topic == "list" or topic == "requesting templates":
-        write_upload_textfile("request","")
+    elif topic == "listing templates" or topic == "listing" or topic == "requesting templates":
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "Simply ask me to list available templates, and I will list all Cloud Formation templates in your S3 bucket. I will also optionally list the resources that each template will use."
     elif topic == "list stacks" or topic == "listing stacks":
-        write_upload_textfile("request","")
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "If you ask me to list all stacks, I will read out each name, and their formation status. If you ask me about the status of a specific stack, I will read out the name, formation status, and resources used."
     elif topic == "two factor authentication" or topic == "authentication":
-        write_upload_textfile("request","")
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "If you wish to create or delete a stack, you will require elevated priviledges. This means that the process won't proceed until a code has been sent to your mobile device. If you need help adding a user to the list of available contacts, a guide is available on the Capgemini github."
     elif topic == "cost estimation" or topic == "costs":
-        write_upload_textfile("request","")
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "If you would like an estimate of the monthly cost of any given template, ask me for the cost, followed by the template number. You will then be sent a link to your mobile device, taking you to the Amazon page with the cost estimation available. "
     elif topic == "resetting" or topic == "resetting the skill":
-        write_upload_textfile("request","")
+        write_upload_textfile("request",""+" "+str(currenttime))
         return "As this skill remembers your conversation using S3 buckets, you can ask me to reset, which will delete the current conversation."
     else:
         write_upload_textfile("request","HelpIntent"+" "+str(currenttime))
@@ -270,6 +270,9 @@ def unknown_request(number,code,user,response,topic):
     elif response == "yes":
         write_upload_textfile("request",request+" "+str(currenttime))
 
+    if request == None or request == "" or request == "?":
+        return question("Please make a request before stating any additional information.").reprompt("If this keeps occuring, try asking me to reset the conversation, and then start again.")
+
     if request == "HelpIntent":
         if unknownrequest == "helptopicrequest":
             if topic != None:
@@ -283,14 +286,14 @@ def unknown_request(number,code,user,response,topic):
             write_upload_textfile("unknown","helptopicrequest")
             return question('Which task would you like help with? Please respond with the word, help, followed by a particular topic.').reprompt('If you are unsure, you can ask about launching or deleting stacks, requesting templates, listing stacks, or two-factor authentication.')
 
-    if request == None or request == "" or request == "?":
-        return question("Please make a request before stating any additional information.").reprompt("If you are unsure, try asking for help.")
-
     if number == None:
         if code != None:
             number = code
         elif unknownrequest == "coderequest" or unknownrequest == "numberrequest":
-            return question("Cloud Former did not hear you clearly. Please state a number.")
+            if response != "yes":
+                return question("Cloud Former did not hear you clearly. Please state a number.").reprompt("If this keeps occuring, try asking me to reset the conversation, and then start again.")
+            elif response == "yes":
+                return question("You have been sent a code to your mobile device. Please state that code.").reprompt("Please state the code sent to your mobile device.")
 
     if unknownrequest == "coderequest":
         code=int(number)
@@ -380,6 +383,7 @@ def stackformation(number):
             ClientRequestToken='tokenrequest'+str(number)
         )
         speech_output = "Stack "+number+" has been launched."
+        write_upload_textfile("request",""+" "+str(currenttime))
         print ("Success.")
     except Exception as e:
         print('Stack formation failed.')
@@ -416,6 +420,7 @@ def stackdeletion(number):
             ClientRequestToken='tokenrequest0'+str(number)
         )
         speech_output = "Stack "+number+" has been deleted."
+        write_upload_textfile("request",""+" "+str(currenttime))
     except Exception as e:
         print('Stack deletion failed.')
         speech_output = "There has been a problem. The instance was not deleted successfully."
@@ -507,12 +512,25 @@ def template_name(number):
         words = filename.split(".")
         title=words[0]
         extension=words[1]
-        list3=""
-        if extension == "json":
+        if extension == "json":# or str.lower(extension) == "yaml":
             i+=1
             if i==int(number):
                 return statement(title.replace("_"," "))
     return statement("That template does not exist.")
+
+@ask.intent("TemplateCount")
+def template_count():
+    write_upload_textfile("request",""+" "+str(currenttime))
+    BUCKET_NAME = s3.Bucket(userbucketname)
+    i=0
+    for file in BUCKET_NAME.objects.all():
+        filename=file.key
+        words = filename.split(".")
+        title=words[0]
+        extension=words[1]
+        if extension == "json":# or str.lower(extension) == "yaml":
+            i+=1
+    return statement("There are "+str(i)+" templates available.")
 
 ##Lists available templates which can be launched.
 @ask.intent("RequestInstance")
@@ -520,7 +538,7 @@ def list_templates_initial(response):
     if response == None:
         write_upload_textfile("request","TemplateRequest"+" "+str(currenttime))
         write_upload_textfile("unknown","templateresponserequest")
-        return question("Would you like to also enable to the description for each template?")
+        return question("Would you like to also enable additional details for each template?")
 
     return statement(list_templates(response))
 
@@ -540,7 +558,7 @@ def list_templates(response):
         title=words[0]
         extension=words[1]
         list3=""
-        if extension == "json":
+        if extension == "json":# or str.lower(extension) == "yaml":
             i+=1
             response = client.get_template_summary(
                 TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(file.key)
@@ -557,6 +575,7 @@ def list_templates(response):
 
     speech_output = '. '.join(list1)
 
+    write_upload_textfile("request",""+" "+str(currenttime))
     return speech_output
 
 ##Lists specific stack resources, if already launched in AWS CloudFormation.
@@ -592,11 +611,21 @@ def stack_status(number):
                 counter+=1
         speech_output="That stack either does not exist, or has been deleted. There are only "+str(counter)+" stacks available."
         return speech_output
+    write_upload_textfile("request",""+" "+str(currenttime))
     return speech_output
 
 ##Gives a summary of all launched stacks in AWS CloudFormation.
 @ask.intent("StackStatusAll")
 def stack_status_all():
+    downloadattempt = download_file("unknown","unknown")
+    if downloadattempt == True:
+        return statement("An error has occured. Please check the Alexa configuration.")
+    file=open("/tmp/unknown.txt","r")
+    unknownrequest=file.read()
+    if unknownrequest == "userrequest":
+        speech_output="That user is invalid."
+        return question(speech_output)
+
     try:
         response = client.list_stacks(
             StackStatusFilter=[
@@ -613,6 +642,7 @@ def stack_status_all():
             speech_output="There are no stacks available."
     except Exception as e:
         speech_output="An error has occured. Please check the Alexa configuration."
+    write_upload_textfile("request",""+" "+str(currenttime))
     return question(speech_output)
 
 #Gives an estimated monthly cost of a template, which is sent to the user's phone.
@@ -687,6 +717,7 @@ def template_cost(number, user):
         sns_output=str(response['Url'])
         sns.publish(PhoneNumber = str(contactnumber), Message=sns_output )
         speech_output="The cost URL has been sent to your mobile device."
+        write_upload_textfile("request",""+" "+str(currenttime))
     except Exception as e:
         print('Cost request failed.')
         speech_output = "There has been a problem. The message was not sent successfully."
