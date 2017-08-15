@@ -28,7 +28,10 @@
         "launch stack {OptionNumber}",
         "create stack {OptionNumber}",
         "invoke stack {OptionNumber}",
-        "launch stack"
+        "launch stack",
+        "create stack {OptionNumber} {Users} {AuthKey}",
+        "launch a stack",
+        "launch the stack"
       ],
       "slots": [
         {
@@ -47,7 +50,7 @@
         },
         {
           "name": "AuthKey",
-          "type": "AMAZON.NUMBER",
+          "type": "AMAZON.FOUR_DIGIT_NUMBER",
           "samples": []
         }
       ]
@@ -55,20 +58,19 @@
     {
       "name": "CloudFormerDeleteIntent",
       "samples": [
-        "destroy stack {OptionNumber}",
-        "delete the stack {OptionNumber}",
-        "remove stack {OptionNumber}",
-        "incinerate stack {OptionNumber}",
-        "trash stack {OptionNumber}",
-        "recycle stack {OptionNumber}",
-        "stop stack {OptionNumber}",
         "stop stack",
         "recycle stack",
         "trash stack",
         "incinerate stack",
         "remove stack",
         "delete stack",
-        "destroy stack"
+        "destroy stack",
+        "delete stack {OptionNumber} {Users} {AuthKey}",
+        "delete a stack",
+        "delete this stack",
+        "remove a stack",
+        "destroy the stack",
+        "destroy a stack"
       ],
       "slots": [
         {
@@ -87,7 +89,7 @@
         },
         {
           "name": "AuthKey",
-          "type": "AMAZON.NUMBER",
+          "type": "AMAZON.FOUR_DIGIT_NUMBER",
           "samples": []
         }
       ]
@@ -118,7 +120,9 @@
         "output available templates",
         "show me available templates",
         "list bucket",
-        "output bucket"
+        "output bucket",
+        "tell me about the templates in my bucket",
+        "tell me how it is"
       ],
       "slots": []
     },
@@ -127,7 +131,8 @@
       "samples": [
         "tell me about option {OptionNumber}",
         "tell me about an option",
-        "what template is option {OptionNumber} "
+        "what template is option {OptionNumber} ",
+        "tell me about an option {OptionNumber}"
       ],
       "slots": [
         {
@@ -144,7 +149,8 @@
         "how many templates do i have",
         "how many templates are there",
         "tell me how many templates there are",
-        "tell me how many templates i have"
+        "tell me how many templates i have",
+        "tell me the number of templates i have"
       ],
       "slots": []
     },
@@ -154,7 +160,9 @@
         "whats the status",
         "tell me the status",
         "show the status",
-        "give me an overview"
+        "give me an overview",
+        "give me the status of running stacks from cloud former",
+        "give me the status of stacks"
       ],
       "slots": []
     }
@@ -226,14 +234,77 @@
         {
           "id": null,
           "name": {
-            "value": "joe",
+            "value": "raj",
             "synonyms": []
           }
         },
         {
           "id": null,
           "name": {
-            "value": "bloggs",
+            "value": "rush",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "james",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "doug",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "jon",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "sara",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "jordan",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "les",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "paul",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "mike",
+            "synonyms": []
+          }
+        },
+        {
+          "id": null,
+          "name": {
+            "value": "grant",
             "synonyms": []
           }
         }
@@ -281,7 +352,7 @@
       "variations": [
         {
           "type": "PlainText",
-          "value": "You will require elevated privileges to call this action, what is your name"
+          "value": "You will require elevated privileges to call this action, please tell me your name."
         }
       ]
     }
@@ -314,7 +385,7 @@
           },
           {
             "name": "AuthKey",
-            "type": "AMAZON.NUMBER",
+            "type": "AMAZON.FOUR_DIGIT_NUMBER",
             "elicitationRequired": false,
             "confirmationRequired": false,
             "prompts": {}
@@ -346,7 +417,7 @@
           },
           {
             "name": "AuthKey",
-            "type": "AMAZON.NUMBER",
+            "type": "AMAZON.FOUR_DIGIT_NUMBER",
             "elicitationRequired": false,
             "confirmationRequired": false,
             "prompts": {}
