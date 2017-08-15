@@ -1,9 +1,10 @@
 /*
  * Lambda function code for the CloudFormer Amazon Alexa Skill
  * Currently Supported Features: Dynamic Create (protected), Dynamic Delete (protected), List Templates, Template Count, Status of CloudFormer stacks, Advanced Help
+ * Detailed Template Information
  *
  * @author rush.soni@capgemini.com
- * @version 1.6.5
+ * @version 1.7
  */
 
 'use strict';
@@ -40,6 +41,7 @@ const authParams = {
   integer: true
 };
 
+// The Application Id for your amazon alexa skill.
 const applicationId = 'amzn1.ask.skill.c2500316-170e-41cc-9c25-45788bd2b814';
 
 //The timeout count in seconds provided to the authentication key generated for valid users.
@@ -51,34 +53,14 @@ const bucketRegion = 'eu-west-1';
 //The Bucket name in which cloud formation templates are placed.
 const bucket = "cloudformer-eu-west-1";
 
+// The base directory for all things regarding authentication and user management.
 const userFolder = "users/";
 
 //The file path for the access file which contains permitted users.
 const userFile = userFolder + "access.json";
 
+// a pause added to :tell commands to make alexa sound more natural.
 const shortPause = "<break time='1s'/>";
-
-//Processes map object according to success and failure of s3.listObjectsV2
-const mapPromise = new Promise(
-  function(resolve, reject) {
-
-    var map = getS3BucketObjects(bucket, 1000);
-
-    if (map != null && map != {}) {
-      resolve(map);
-    } else {
-
-      var errorMsg;
-
-      if (map == {}) {
-        errorMsg = "There are no keys in " + bucket;
-      } else if (map == null) {
-        errorMsg = "The S3 Bucket you specified doesn't exist."
-      }
-
-      reject(errorMsg);
-    }
-  });
 
 //Handling of intents from Alexa Skills Kit
 const handlers = {
@@ -91,66 +73,96 @@ const handlers = {
     //Have alexa request required slots to be filled.
     var slots = self.event.request.intent.slots;
 
-    delegateToAlexa(self)
+    //Ensure asynchronous code has been executed before the code continues, prevents failure and subsequent closure of request.
+    var slotElicitPromise = new Promise(function(resolve, reject) {
 
-    //Validate mandatory slots input.
-    var optionFilled = validateSlot(slots.OptionNumber);
+      if (self.event.request.dialogState == "STARTED" || self.event.request.dialogState == "IN_PROGRESS") {
+        //Check if not set, otherwise recursive call overides the slot value.
+        if (!validateSlot(slots.OptionNumber)) {
+          self.emit(':elicitSlot', 'OptionNumber', "Which cloud formation stack would you like me to create", null, null);
+        }
 
-    var userFilled = validateSlot(slots.Users);
+        //Check if not set, otherwise recursive call overides the slot value.
+        if (!validateSlot(slots.Users)) {
+          self.emit(':elicitSlot', 'Users', "You will require elevated privileges to call this action, what is your name", null, null);
+        }
+      }
 
-    //Get boolean evaluation
-    var slotValuesFilled = optionFilled && userFilled;
+      //Validate mandatory slots input.
+      var optionFilled = validateSlot(slots.OptionNumber);
 
-    //Code to execute upon promise resolution
-    return authenticate(self, slotValuesFilled).then(
-      function(user) {
-        //Function logic for processing mapPromise for Listing maps.
-        mapPromise.then(
+      var userFilled = validateSlot(slots.Users);
 
-          //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
-          function(map) {
+      //Get boolean evaluation
+      var slotValuesFilled = optionFilled && userFilled;
 
-            //Get the user specified option
-            var optionNumber = self.event.request.intent.slots.OptionNumber.value;
+      if (slotValuesFilled) {
+        resolve(slotValuesFilled);
+      } else {
+        reject(null);
+      }
 
-            if (map[optionNumber] != null) {
+    });
 
-              var stackName = validateStackName(map[optionNumber].name);
-              var theStack = new Stack(stackName);
+    //Ensures that the slots have been elicited.
+    slotElicitPromise.then(
+      function(slotValuesFilled) {
+        //Code to execute upon promise resolution
+        authenticate(self, slotValuesFilled).then(
+          function(user) {
+            //Function logic for processing mapPromise for Listing maps.
+            mapPromise().then(
 
-              //Create stack from amazon web services from the chosen template placed based within the specified bucket.
-              theStack.apply(map[optionNumber].url, {
-                Parameters: {},
-                DisableRollback: false,
-                Capabilities: [],
-                NotificationARNs: [],
-                Tags: {
-                  Name: "cloudformer:" + map[optionNumber].name
-                },
-              }, console.log);
+              //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
+              function(map) {
 
-              self.emit(':tell', "your stack, " + alexaOutputStackName(map[optionNumber].name) + " has been created ");
+                //Get the user specified option
+                var optionNumber = self.event.request.intent.slots.OptionNumber.value;
 
-            } else {
-              console.error("Item not found within the S3 bucket.");
-              self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
-            }
+                if (map[optionNumber] != null) {
+
+                  var stackName = validateStackName(map[optionNumber].name);
+                  var theStack = new Stack(stackName);
+
+                  //Create stack from amazon web services from the chosen template placed based within the specified bucket.
+                  theStack.apply(map[optionNumber].url, {
+                    Parameters: {},
+                    DisableRollback: false,
+                    Capabilities: [],
+                    NotificationARNs: [],
+                    Tags: {
+                      Name: "cloudformer:" + map[optionNumber].name
+                    },
+                  }, console.log);
+
+                  self.emit(':tell', "your stack, " + alexaOutputStackName(map[optionNumber].name) + " is being created ");
+
+                } else {
+                  console.error("Item not found within the S3 bucket.");
+                  self.emit(':tell', "The option number you specified doesn't exist within the S3 bucket");
+                }
+              },
+              //Fail: Case where the map returns empty
+              function(errorMsg) {
+
+                //log error in console and then have alexa emit the message.
+                console.error(errorMsg);
+                self.emit(':tell', errorMsg);
+
+              }
+            );
+
           },
-          //Fail: Case where the map returns empty
-          function(errorMsg) {
-
-            //log error in console and then have alexa emit the message.
-            console.error(errorMsg);
-            self.emit(':tell', errorMsg);
-
+          function(error) {
+            self.emit(':tell', 'Access Denied from Create');
           }
         );
-
       },
       function(error) {
-        self.emit(':tell', 'Access Denied from Create');
+        console.log(error);
       }
     );
+
 
   },
 
@@ -162,93 +174,116 @@ const handlers = {
     //Have alexa request required slots to be filled.
     var slots = self.event.request.intent.slots;
 
-    //Check if not set, otherwise recursive call overides the slot value.
-    if (!validateSlot(slots.OptionNumber)) {
-      self.emit(':elicitSlot', 'OptionNumber', "Which cloud formation stack would you like me to delete", null, null);
-    }
+    //Ensure asynchronous code has been executed before the code continues, prevents failure and subsequent closure of request.
+    var slotElicitPromise = new Promise(function(resolve, reject) {
 
-    //Check if not set, otherwise recursive call overides the slot value.
-    if (!validateSlot(slots.Users)) {
-      self.emit(':elicitSlot', 'Users', "You will require elevated privileges to call this action, what is your name", null, null);
-    }
+      if (self.event.request.dialogState == "STARTED" || self.event.request.dialogState == "IN_PROGRESS") {
+        //Check if not set, otherwise recursive call overides the slot value.
+        if (!validateSlot(slots.OptionNumber)) {
+          self.emit(':elicitSlot', 'OptionNumber', "Which cloud formation stack would you like me to delete", null, null);
+        }
 
-    //Validate mandatory slots input.
-    var optionFilled = validateSlot(slots.OptionNumber);
-    var userFilled = validateSlot(slots.Users);
+        //Check if not set, otherwise recursive call overides the slot value.
+        if (!validateSlot(slots.Users)) {
+          self.emit(':elicitSlot', 'Users', "You will require elevated privileges to call this action, what is your name", null, null);
+        }
+      }
 
-    //Get boolean evaluation
-    var slotValuesFilled = optionFilled && userFilled;
+      //Validate mandatory slots input.
+      var optionFilled = validateSlot(slots.OptionNumber);
 
-    //Code to execute upon promise resolution
-    return authenticate(self, slotValuesFilled).then(
+      var userFilled = validateSlot(slots.Users);
 
-      //Successful authentication
-      function(user) {
+      //Get boolean evaluation
+      var slotValuesFilled = optionFilled && userFilled;
 
-        console.log("Authenticated User: " + user);
+      if (slotValuesFilled) {
+        resolve(slotValuesFilled);
+      } else {
+        reject("Slots not filled.");
+      }
 
-        //Function logic for processing mapPromise for Listing maps.
-        mapPromise.then(
-          //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
-          function(map) {
+    });
 
-            //Get the user specified option
-            var optionNumber = self.event.request.intent.slots.OptionNumber.value;
 
-            if (map[optionNumber] != null) {
+    //Ensures slots have been filled before continuing.
+    slotElicitPromise.then(
+      function(slotValuesFilled) {
+        //Code to execute upon promise resolution
+        authenticate(self, slotValuesFilled).then(
 
-              var stackName = validateStackName(map[optionNumber].name);
-              var stackNameOutput = alexaOutputStackName(map[optionNumber].name);
-              var theStack = new Stack(stackName);
+          //Successful authentication
+          function(user) {
 
-              getStatus(map).then(
-                //An array of running stacks and there states.
-                function(statusMap) {
+            console.log("Authenticated User: " + user);
 
-                  //Stack to delete exists as a running stack
-                  var stackExists = false;
+            //Function logic for processing mapPromise for Listing maps.
+            mapPromise().then(
+              //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
+              function(map) {
 
-                  for (var i = 0; i < statusMap.length; i++) {
-                    //Stack exists so can be deleted
-                    if (statusMap[i].name == stackName) {
-                      stackExists = true;
-                      break;
+                //Get the user specified option
+                var optionNumber = self.event.request.intent.slots.OptionNumber.value;
+
+                if (map[optionNumber] != null) {
+
+                  var stackName = validateStackName(map[optionNumber].name);
+                  var stackNameOutput = alexaOutputStackName(map[optionNumber].name);
+                  var theStack = new Stack(stackName);
+
+                  getStatus(map).then(
+                    //An array of running stacks and there states.
+                    function(statusMap) {
+
+                      //Stack to delete exists as a running stack
+                      var stackExists = false;
+
+                      for (var i = 0; i < statusMap.length; i++) {
+                        //Stack exists so can be deleted
+                        if (statusMap[i].name == stackName) {
+                          stackExists = true;
+                          break;
+                        }
+                      }
+                      // Stack doesn't exist/hasn't been instantiated from a template.
+                      if (!stackExists) {
+                        self.emit(':tell', "The stack; " + stackNameOutput + ", doesn't exist in the list of running stacks, so it cannot be deleted.");
+
+                      }
+                      else {
+                        theStack.delete(console.log);
+                        self.emit(':tell', "your stack, " + stackNameOutput + " is being deleted");
+                      }
+
+                    },
+                    //No running stacks from cloud former.
+                    function(error) {
+                      self.emit(':tell', "There are currently no stacks running which have been created from Cloud Former.");
                     }
-                  }
+                  );
 
-                  if (!stackExists) {
-                    return self.emit(':tell', "The stack you requested isn't running so it can't be deleted");
-                  } else {
-                    theStack.delete(console.log);
-
-                    self.emit(':tell', "your stack, " + stackNameOutput + " has been deleted");
-                  }
-
-                },
-                //No running stacks from cloud former.
-                function(error) {
-                  console.log("CloudFormer hasn't created any stacks.");
-                  self.emit(':tell', "Cloud Former has not created any stacks, so you cannot delete a stack");
+                } else {
+                  self.emit(':tell', "Invalid option number, there isn't a template associated with that option number. There are only " + (map.length - 1) + " templates in your bucket.");
                 }
-              );
+              },
+              //Fail: Case where the map returns empty
+              function(errorMsg) {
+                //log error in console and then have alexa emit the message.
+                console.error(errorMsg);
+                self.emit(':tell', errorMsg);
 
-            } else {
-              self.emit(':tell', "Invalid option number");
-            }
+              }
+            );
           },
-          //Fail: Case where the map returns empty
-          function(errorMsg) {
-            //log error in console and then have alexa emit the message.
-            console.error(errorMsg);
-            self.emit(':tell', errorMsg);
-
+          //Failed authentication
+          function(error) {
+            console.log(error);
+            self.emit(':tell', error);
           }
         );
       },
-      //Failed authentication
       function(error) {
         console.log(error);
-        self.emit(':tell', error);
       }
     );
   },
@@ -261,7 +296,7 @@ const handlers = {
     var speechOutput = 'Here is a list of cloud formation templates available in your S3 bucket' + shortPause;
 
     //Function logic for processing mapPromise for Listing maps.
-    mapPromise.then(
+    mapPromise().then(
 
       //Success: Case where the mapPromise has been sucessfully resolved and map contains objects..
       function(map) {
@@ -290,7 +325,7 @@ const handlers = {
     var self = this;
 
     //Function logic for processing mapPromise for returning the count of objects in the s3 bucket.
-    mapPromise.then(
+    mapPromise().then(
 
       //Case where the mapPromise has been sucessfully resolved and map contains objects.
       function(map) {
@@ -311,7 +346,7 @@ const handlers = {
 
     var self = this;
 
-    mapPromise.then(
+    mapPromise().then(
 
       function(map) {
         //Returns a list of CloudFormation stacks launched from cloud former
@@ -328,10 +363,10 @@ const handlers = {
                 counter++;
               }
 
-              return self.emit(':tell', speechOutput);
+              self.emit(':tell', speechOutput);
 
             } else {
-              return self.emit(':tell', 'There are no stacks running which have been created by cloud former');
+              self.emit(':tell', 'There are no stacks running which have been created by cloud former');
             }
           },
           function(errorMsg) {
@@ -353,19 +388,47 @@ const handlers = {
 
     delegateToAlexa(self);
 
-    mapPromise.then(
+    mapPromise().then(
       function(map) {
 
         var optionNumber = self.event.request.intent.slots.OptionNumber.value;
 
         //Options slot unfilled due to not specifiying the option number, so elicit the slot to fill it.
         if (typeof optionNumber === 'undefined') {
-          self.emit(":elicitSlot", "OptionNumber", "What option number would you like to know the name for", null, null);
+          self.emit(":elicitSlot", "OptionNumber", "What option number would you like to know additional information for", null, null);
         }
 
         //Output information associated with option
         if (map[optionNumber] != null && map[optionNumber] != {} && typeof map[optionNumber] !== 'undefined') {
-          self.emit(':tell', "Here is the name of the template associated with option " + optionNumber + " " + shortPause + alexaOutputStackName(map[optionNumber].name));
+
+          var params = {
+            TemplateURL: map[optionNumber].url
+          };
+
+          // Get the template summary.
+          cloudFormation.getTemplateSummary(params, function(err, data){
+
+            if(err){
+              console.log(err, err.stack);
+            }
+            else {
+              console.log(data.ResourceTypes);
+
+              var templateName = "Here is the name of the template associated with option " + optionNumber + " " + shortPause + alexaOutputStackName(map[optionNumber].name) + ";";
+
+              templateName += "Here is a list of resources used to make the template" + shortPause;
+
+              for(var resource in data.ResourceTypes){
+                  var resourceComponents = data.ResourceTypes[resource].split('::');
+                  console.log(resourceComponents);
+                  templateName += resourceComponents[1] + " " + resourceComponents[2] + shortPause;
+              }
+
+              self.emit(':tell', templateName);
+            }
+
+          });
+
         }
         //Option number not associated with a CloudFormation template.
         else {
@@ -410,8 +473,8 @@ const handlers = {
         break;
 
       case "count":
-        this.emit(':tell', "You can ask Cloud Former to give you a count of templates in your bucket, created by cloudformer;" +
-          shortPause + "simply ask Cloud Former how many temples are there to invoke this action");
+        this.emit(':tell', "You can ask Cloud Former to give you a count of templates in your bucket;" +
+          shortPause + "simply ask Cloud Former how many templates are there to invoke this action");
         break;
 
       case "list":
@@ -421,11 +484,11 @@ const handlers = {
 
       case "status":
         this.emit(':tell', "You can ask Cloud Former to give you a list of running stacks which have been created by Cloud Former;" +
-          shortPause + "simply ask Cloud Former to show the status to invoke this action");
+          shortPause + "simply ask Cloud Former to give me an overview to invoke this action");
         break;
 
       case "option":
-        this.emit(':tell', "You can ask Cloud Former for name of a template which is associated to an option number;" +
+        this.emit(':tell', "You can ask Cloud Former for the name of a template, which is associated to an option number;" +
           shortPause + "simply ask Cloud Former to tell me about an option to invoke this action");
         break;
 
@@ -437,6 +500,7 @@ const handlers = {
 
   },
 
+  // Handle erroneous calls to CloudFormer.
   'Unhandled': function() {
     this.emit(':tell', "Sorry i didn't quite catch that, please try again");
   }
@@ -486,7 +550,7 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
 
         var bucketItem = data.Contents[i];
 
-        if (bucketItem.Key.includes(".json") && bucketItem.Key.indexOf('/') == -1) {
+        if ((bucketItem.Key.includes(".json") || bucketItem.Key.includes('.yaml') ) && bucketItem.Key.indexOf('/') == -1) {
 
           //increment counter for new map address.
           template_counter++;
@@ -524,7 +588,7 @@ function getS3BucketObjects(bucketName, maxKeyCount) {
 function getStatus(map) {
 
   var params = {
-    StackStatusFilter: ['CREATE_COMPLETE']
+    StackStatusFilter: ['CREATE_COMPLETE', 'CREATE_FAILED', 'CREATE_IN_PROGRESS', 'ROLLBACK_IN_PROGRESS', 'ROLLBACK_FAILED', 'ROLLBACK_COMPLETE', 'DELETE_IN_PROGRESS', 'DELETE_FAILED', 'UPDATE_IN_PROGRESS', "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_IN_PROGRESS", "UPDATE_ROLLBACK_FAILED", "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", "UPDATE_ROLLBACK_COMPLETE", "REVIEW_IN_PROGRESS"]
   };
 
   //Fetch the list of CloudFormation stacks, look at the stackName and compare it to that from the options map
@@ -610,7 +674,6 @@ function authenticateUsers(spokenUser, self, callback) {
     //Handle initial error in creating topic.
     if (err) {
       console.log("Couldn't create a topic for registering users to SMS alerts for AuthKeys.", err.stack);
-      return false;
     }
     //Topic created.
     else {
@@ -627,7 +690,6 @@ function authenticateUsers(spokenUser, self, callback) {
 
         if (errorMsg) {
           console.log("Couldn't locate " + userFile + " object from within the " + bucket);
-          return false;
         } else {
           //Read in and parse access file into a JSON object
           var contactsString = response.Body.toString();
@@ -672,7 +734,6 @@ function authenticateUsers(spokenUser, self, callback) {
             if (!validUser) {
               console.log("Invalid user name, please request access from an administrator");
               self.emit(':tell', spokenUser + shortPause + "You are not authorised to call this action, please request access from an administrator");
-              return;
             } else {
               //Check if auth file exists, if it doesn't create one and then send the key. if it does exist send the exisiting key
               s3.getObject(authFileParams, function(err, data) {
@@ -703,25 +764,25 @@ function authenticateUsers(spokenUser, self, callback) {
 
                     console.log("fileNotFound");
 
-                    // //Subscribes authorised user if they haven't already, otherwise gets the default subscription
-                    // var subscribeParams = {
-                    //   Protocol: "sms",
-                    //   TopicArn: topicKey,
-                    //   Endpoint: authUser.contactNumber,
-                    // };
-                    //
-                    // //Subscribe User
-                    // sns.subscribe(subscribeParams).send();
-                    //
-                    // //POST authKey to user phoneNumber
-                    // var smsParams = {
-                    //   PhoneNumber: authUser.contactNumber,
-                    //   Message: 'AuthKey : ' + authKey
-                    // };
-                    //
-                    // //Send verified user an sms containing the authKey
-                    // sns.publish(smsParams).send();
-                    //
+                    //Subscribes authorised user if they haven't already, otherwise gets the default subscription
+                    var subscribeParams = {
+                      Protocol: "sms",
+                      TopicArn: topicKey,
+                      Endpoint: authUser.contactNumber,
+                    };
+
+                    //Subscribe User
+                    sns.subscribe(subscribeParams).send();
+
+                    //POST authKey to user phoneNumber
+                    var smsParams = {
+                      PhoneNumber: authUser.contactNumber,
+                      Message: 'AuthKey : ' + authKey
+                    };
+
+                    //Send verified user an sms containing the authKey
+                    sns.publish(smsParams).send();
+
 
                     console.log("Sent Auth Key to device");
 
@@ -734,21 +795,43 @@ function authenticateUsers(spokenUser, self, callback) {
 
                       var slots = self.event.request.intent.slots;
 
-                      //Check if not set, otherwise recursive call overides the slot value.
-                      if (!validateSlot(slots.AuthKey)) {
-                        self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
-                      }
 
-                      var userAuthKey = self.event.request.intent.slots.AuthKey.value;
+                      var authSlotPromise = new Promise(function(resolve, reject) {
 
-                      console.log("Spoken AuthKey: " + userAuthKey);
+                        //Check if not set, otherwise recursive call overides the slot value.
+                        if (!validateSlot(slots.AuthKey)) {
+                          self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key<break time='15s'/>", null, null);
+                        }
 
-                      //Accept user if keys match
-                      if (userAuthKey == authCode) {
-                        return callback(true);
-                      }
+                        if (!validateSlot(slots.AuthKey)) {
+                          reject(null);
+                        }
 
-                      return callback(false);
+                        resolve(slots.AuthKey.value);
+
+
+                      });
+
+                      authSlotPromise.then(
+                        function(authSlotValue) {
+
+                          console.log("Spoken AuthKey: " + authSlotValue);
+
+                          //Accept user if keys match
+                          if (authSlotValue == authCode) {
+                            deleteAuthKey(authUser.name ,self);
+                            callback(true);
+                          } else {
+                            callback(false);
+                          }
+
+                        },
+                        function(error) {
+                          console.log(error);
+                          callback(false);
+                        }
+                      );
+
                     });
 
                   });
@@ -765,21 +848,40 @@ function authenticateUsers(spokenUser, self, callback) {
 
                   var slots = self.event.request.intent.slots;
 
-                  //Check if not set, otherwise recursive call overides the slot value.
-                  if (!validateSlot(slots.AuthKey)) {
-                    self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
-                  }
+                  var authSlotPromise = new Promise(function(resolve, reject) {
 
-                  var userAuthKey = self.event.request.intent.slots.AuthKey.value;
+                    //Check if not set, otherwise recursive call overides the slot value.
+                    if (!validateSlot(slots.AuthKey)) {
+                      self.emit(':elicitSlot', 'AuthKey', "You will have been sent a key to your mobile device, please tell me the key", null, null);
+                    }
 
-                  console.log("Spoken AuthKey: " + userAuthKey);
+                    if (!validateSlot(slots.AuthKey)) {
+                      reject(null);
+                    }
 
-                  //Accept user if keys match
-                  if (userAuthKey == authCode) {
-                    return callback(true);
-                  }
+                    resolve(slots.AuthKey.value);
 
-                  return callback(false);
+                  });
+
+                  authSlotPromise.then(
+                    function(authSlotValue) {
+
+                      console.log("Spoken AuthKey: " + authSlotValue);
+
+                      //Accept user if keys match
+                      if (authSlotValue == authCode) {
+                        deleteAuthKey(authUser.name, self);
+                        callback(true);
+                      } else {
+                        callback(false);
+                      }
+
+                    },
+                    function(error) {
+                      console.log(error);
+                      callback(false);
+                    }
+                  );
                 }
 
               });
@@ -860,4 +962,32 @@ function delegateToAlexa(self) {
  */
 function validateSlot(slot) {
   return typeof slot.value !== 'undefined' && slot.value != null;
+}
+
+/*
+ * Executed every time the latest instance of the set of templates from the buckets is required.
+ */
+function mapPromise(){
+
+  return new Promise(
+    function(resolve, reject) {
+
+      var map = getS3BucketObjects(bucket, 1000);
+
+      if (map != null && map != {}) {
+        resolve(map);
+      } else {
+
+        var errorMsg;
+
+        if (map == {}) {
+          errorMsg = "There are no keys in " + bucket;
+        } else if (map == null) {
+          errorMsg = "The S3 Bucket you specified doesn't exist."
+        }
+
+        reject(errorMsg);
+      }
+    });
+
 }

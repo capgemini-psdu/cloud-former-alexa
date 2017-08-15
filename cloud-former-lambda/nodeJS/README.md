@@ -8,19 +8,18 @@ This section details how you would set up the Alexa skill for Cloud Former
 ### Configuring Skill Information
 1. Set the Skill Type to "Custom Interaction Model"
 1. Select either English(UK) or English(US) for Language
-1. Select either English(UK) or English(US) for Language
 1. Create a new Alexa Skill and name it "CloudFormer" and give it an invocation name of "cloud former"
 1. Select "No" for all Global Fields.
 
 ### Building the Interaction Model
 1. Select the Launch Skill Builder (Beta) button.
 1. Select </> Code Editor from left-hand menu and proceed to upload the file JSON interaction model located here: __~/cloud-former-alexa/alexa-skills-components/skill-builder.json__".
-1. Scroll down the left-hand menu and find the Slot Type called People, within this slot you will add the first names/nicknames (lowercase) of Users to which you will grant elevated priveleges.
+1. Scroll down the left-hand menu and find the Slot Type called People, within this slot you will add the first names/nicknames (lowercase) of Users to which you will grant elevated privileges.
 1. Hit save and then build the model, this should take a few minutes.
 
 ### Configuring Endpoints
 1. Select __AWS Lambda ARN__ for the service endpoint
-1. Select a geopgraphical region (or both)
+1. Select a geographical region (or both)
 1. Enter the Application Resource Name (ARN) of the lambda function which you will create in the __Lambda Function Configuration__ section.
 1. Select __No__ for Account linking and then leave everything else unchecked.
 
@@ -102,7 +101,7 @@ This file is to be stored in S3, in the path outlined by the constant: userFile,
 
 ### Authentication Wrapper
 
-Authentication wrapper is wrapped around any code that requires authenticating. Authentication works by sending an authorised user a OTP (One Time Password). 
+Authentication wrapper is wrapped around any code that requires authenticating. Authentication works by sending an authorised user a OTP (One Time Password).
 You will need to add the user to the access.json file in your s3 bucket for this to work.
 
 __NOTE:__ Authentication requires for the Intent which requires authenticating to meet the following prerequisites
@@ -118,16 +117,16 @@ This design approach allows for the developer to grant varying levels of access 
 
 ```
 'CloudFormer<ACTION-NAME>Intent' : function() {
-  
+
   var self = this;
-  
+
   authenticate(self, slotValuesFilled).then(
 
       //Authentication Successful, callback is passed back the users name.
       function(user) {
         //Protected Code, ran on successful authentication
       },
-      
+
       //Authentication Failed, callback is passed back a null value.
       function(error){
         //Handle failed authentication.
