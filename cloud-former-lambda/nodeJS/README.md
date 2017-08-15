@@ -104,14 +104,14 @@ This file is to be stored in S3, in the path outlined by the constant: userFile,
 Authentication wrapper is wrapped around any code that requires authenticating. Authentication works by sending an authorised user a OTP (One Time Password).
 You will need to add the user to the access.json file in your s3 bucket for this to work.
 
-__NOTE:__ Authentication requires for the Intent which requires authenticating to meet the following prerequisites
+__NOTE:__ The wrapper requires that the Intent which requires authenticating should meet the following prerequisites
 
 1. Have a __Users__ slot which is assigned a custom slot type which contains list of permitted users names in lowercase.
-1. Have an __AuthKey__ slot with a Slot Type of __AMAZON.NUMBER__
+1. Have an __AuthKey__ slot with a Slot Type of __AMAZON.NUMBER__ / __AMAZON.FOUR_DIGIT_NUMBER__
 1. The developer has set up the equivalent of an users/access.json file within S3.
 
 __NOTE:__ The Users slot for the intent can either contain a [Subset](https://en.wikipedia.org/wiki/Subset) of the users in the access file or be a [Perfect Set](https://en.wikipedia.org/wiki/Perfect_set).
-This design approach allows for the developer to grant varying levels of access too different users of the CloudFormer skill. i.e. Granting a set of users access to one intent but not another.
+This design approach allows for the developer to grant varying levels of access to different users of the CloudFormer skill. i.e. Granting a set of users access to one intent but not another.
 
 
 
@@ -119,6 +119,18 @@ This design approach allows for the developer to grant varying levels of access 
 'CloudFormer<ACTION-NAME>Intent' : function() {
 
   var self = this;
+
+  // NOTE: You can add a javascript promise to ensure slot values have been filled.
+
+  if (self.event.request.dialogState == "STARTED" || self.event.request.dialogState == "IN_PROGRESS") {
+
+    //Check if not set, otherwise recursive call overides the slot value.
+    if (!validateSlot(slots.Users)) {
+      self.emit(':elicitSlot', 'Users', "You will require elevated privileges to call this action, what is your name", null, null);
+    }
+
+  }
+
 
   authenticate(self, slotValuesFilled).then(
 
@@ -136,18 +148,15 @@ This design approach allows for the developer to grant varying levels of access 
 ````
 
 ## Contributors
-* Rushil Soni - nodeJS
+* Rushil Soni - Software Engineer
 * Nagaraj Govindaraj - CloudFormation Templates
-
-### Developer
-* Rushil Soni
 
 ### Author
 * Rushil Soni
 
 ## License
 
-cloudformer-node npm package (mikgan) | https://www.npmjs.com/package/cloudformer-node | MIT OpenLicense
+cloudformer-node npm package [forked](mikgan) | https://www.npmjs.com/package/cloudformer-node | MIT OpenLicense
 
 random-number npm package (ashnur) | https://www.npmjs.com/package/random-number | BSD 2-clause "Simplified" License
 
