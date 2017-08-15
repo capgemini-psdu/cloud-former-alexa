@@ -3,7 +3,7 @@
 #Author: Jordan Lindsey
 #Email: jordan.lindsey@capgemini.com
 #Version: 4.1
-#Date: 14/08/2017
+#Date: 15/08/2017
 #Features: Can give current date/time. Creation of AWS stack. Deletion of AWS stack. Conversations. SMS Verification. Dynamic Stack Formation. Stack descriptions.
 #https://github.com/capgemini-psdu/cloud-former-alexa
 #This code is (C) Copyright 2017 by Capgemini UK.
@@ -512,7 +512,7 @@ def template_name(number):
         words = filename.split(".")
         title=words[0]
         extension=words[1]
-        if extension == "json":# or str.lower(extension) == "yaml":
+        if extension == "json" or extension == "yaml":
             i+=1
             if i==int(number):
                 return statement(title.replace("_"," "))
@@ -528,7 +528,7 @@ def template_count():
         words = filename.split(".")
         title=words[0]
         extension=words[1]
-        if extension == "json":# or str.lower(extension) == "yaml":
+        if extension == "json" or extension == "yaml":
             i+=1
     return statement("There are "+str(i)+" templates available.")
 
@@ -558,7 +558,7 @@ def list_templates(response):
         title=words[0]
         extension=words[1]
         list3=""
-        if extension == "json":# or str.lower(extension) == "yaml":
+        if extension == "json" or extension == "yaml":
             i+=1
             response = client.get_template_summary(
                 TemplateURL='https://s3-'+userbucketregion+'.amazonaws.com/'+userbucketname+'/'+str(file.key)
