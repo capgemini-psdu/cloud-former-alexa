@@ -33,7 +33,7 @@ userbucketregion='eu-west-1' #(Default = eu-west-1)
 usertimeout=60 ##Modify this setting to change 2FA code timeout time (seconds). Shorter time = Increased security. (Default = 60)
 usercodelength=4 ##Modify this setting to change 2FA code length. Larger code = Increased security. (Default = 4)
 userrollbacktime=5 ##Modify this setting to determine the length of time a stack should be allowed to launch before timing out (minutes). (Default = 5)
-userrequesttimeout=300 ##Modify yhis setting to change request timeout time (seconds). (Default = 300)
+userrequesttimeout=300 ##Modify this setting to change request timeout time (seconds). (Default = 300)
 ##
 
 ##Define global variables:
