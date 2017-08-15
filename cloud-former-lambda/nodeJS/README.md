@@ -124,7 +124,7 @@ This design approach allows for the developer to grant varying levels of access 
 
   if (self.event.request.dialogState == "STARTED" || self.event.request.dialogState == "IN_PROGRESS") {
 
-    //Check if not set, otherwise recursive call overides the slot value.
+    //Check if not set, otherwise recursive call overrides the slot value.
     if (!validateSlot(slots.Users)) {
       self.emit(':elicitSlot', 'Users', "You will require elevated privileges to call this action, what is your name", null, null);
     }
