@@ -7,7 +7,6 @@
         "keep_warm": false,
         "timeout_seconds": 30,
         "memory_size": 256,
-        "manage_roles": false,
-        "role_name":"tempf-dev-ZappaLambdaExecutionRole"
+        "manage_roles": true
     }
 }

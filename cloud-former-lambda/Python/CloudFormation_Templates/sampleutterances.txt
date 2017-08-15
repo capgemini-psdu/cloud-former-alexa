@@ -2,9 +2,12 @@ AMAZON.StopIntent no
 AMAZON.StopIntent nope
 AMAZON.StopIntent no thanks
 AMAZON.StopIntent no thank you
-ResetSkill reset the skill
-ResetSkill reset skill
-ResetSkill reset
+HelpIntent help {topic}
+HelpIntent help with {topic}
+HelpIntent help
+ResetSkill reset the alexa skill
+ResetSkill reset conversation
+ResetSkill reset alexa skill
 GetDateIntent what is the date
 GetDateIntent what day is today
 GetTimeIntent what is the time
@@ -23,6 +26,8 @@ LaunchInstance create a stack {number} {code} {user}
 LaunchInstance create stack {number} {code} {user}
 LaunchInstance create stack {number} with code {code} user {user}
 LaunchInstance launch stack
+LaunchInstance launch a stack
+LaunchInstance build stack {number}
 TerminateInstance terminate number {number} with code {code} user {user}
 TerminateInstance stop number {number} with code {code} user {user}
 TerminateInstance terminate {number} with code {code} user {user}
@@ -37,26 +42,40 @@ TerminateInstance terminate stack {number} {code} {user}
 TerminateInstance terminate instance {number} {code} {user}
 TerminateInstance stop {number} {code} {user}
 TerminateInstance delete stack
-RequestInstance list the instances
+TerminateInstance delete a stack
+RequestInstance list the instances {response}
 RequestInstance name the instances
 RequestInstance list templates
 RequestInstance name instances
-RequestInstance list  instances
 RequestInstance name the templates
 RequestInstance read out the templates
 RequestInstance what templates are available
-RequestInstance list  available templates
+RequestInstance list available templates {response}
+RequestInstance list available templates
+RequestInstance list all templates
+TemplateName what is the name of template {number}
+TemplateName title of template {number}
+TemplateName name of template {number}
+TemplateName name of {number}
+TemplateName title of {number}
+TemplateName what is the name of option {number}
+TemplateName option number {number}
+TemplateName option {number}
+TemplateName option {number} name
 UnknownRequest number {number}
 UnknownRequest code {code}
 UnknownRequest number {number} with code {code}
 UnknownRequest {number}
 UnknownRequest {user}
+UnknownRequest {topic}
+UnknownRequest {response}
 UnknownRequest user {user}
 UnknownRequest i am {user}
 UnknownRequest i'm {user}
 UnknownRequest username {user}
 UnknownRequest my name is {user}
 StackStatus stack status {number}
+StackStatus status of stack {number}
 StackStatus list stack status {number}
 StackStatus state stack status {number}
 StackStatus name stack status {number}
@@ -64,6 +83,10 @@ StackStatus list status {number}
 StackStatus give me the current status {number}
 StackStatus request stack status {number}
 StackStatusAll list all stacks
+StackStatusAll list all cloud formation stacks
+StackStatusAll list all launched stacks
+StackStatusAll list stacks
+StackStatusAll list
 TemplateCost how much will {number} cost user {user}
 TemplateCost how much will template {number} cost user {user}
 TemplateCost how much will stack {number} cost user {user}
@@ -80,3 +103,9 @@ TemplateCost what would be the price of stack {number} user {user}
 TemplateCost what would be the price of {number} user {user}
 TemplateCost what would be the price of template {number} user {user}
 TemplateCost cost {number} user {user}
+TemplateCount how many templates are available
+TemplateCount total number of templates
+TemplateCount what is the total template number
+TemplateCount count the templates
+TemplateCount count the templates available
+TemplateCount count templates

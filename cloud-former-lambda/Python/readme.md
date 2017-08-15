@@ -4,7 +4,7 @@
 
 Before getting started with this project, you will require:
 
-* An Amazon Echo, Echo Dot or Echo Tap (or be willing to use the Amazon simulator.)
+* An Amazon Echo or Echo Dot (or be willing to use the Amazon simulator.)
 * An installation of Python 2.7 on your device, found [here](https://www.python.org/downloads/).
 * An Amazon Web Services account.
 * An Amazon Developer account.
@@ -241,6 +241,31 @@ Within your Amazon Developer Portal, navigate to the [Alexa Skills Kit](https://
 * For the 'Intent Schema', copy and paste the text in the file /Python/CloudFormation_Templates/intentschema.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/intentschema.json).
 * For the 'Sample Utterances', copy and paste the text in the file /Python/CloudFormation_Templates/sampleutterances.txt on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/sampleutterances.txt).
 * In 'Custom Slot Types', create a slot called 'user', and enter the names of the users who you wish to have access to the Two-Factor Authentication codes. For example, you could use first names, such as 'John', or 'Bethany'.
+* In 'Custom Slot Types', create a slot called 'response', and enter two responses, stating 'yes' and 'no'.
+* In 'Custom Slot Types', create a slot called 'topic', and copy the following:
+```
+launch
+launching
+launching a stack
+launching a template
+delete
+deleting
+terminating
+terminating a stack
+deleting a stack
+listing
+list templates
+listing templates
+requesting templates
+list stacks
+listing stacks
+authentication
+cost estimation
+costs
+resetting
+resetting the skill
+```
+**These are the topics you can ask for help for within the Alexa skill.**
 * In configuration, choose HTTPS, and then select the geographical region of your Lambda function. In the text box, paste in the URL Zappa provided to you previously, in the form:
 
 ```
@@ -263,18 +288,22 @@ and the skill should respond with:
 
 if the skill is functioning. If you receive an error, investigate the CloudWatch logs and diagnose accordingly.
 
-**There is currently a bug in the Alexa simulator, which will cause this skill to fail. To counter this, write a request in written English, copy the corresponding JSON request and then re-send that, as a temporary workaround. This should be fixed shortly by Amazon directly.**
-
 ## Additional Requirements
 
-You will require at least one CloudFormation template in your S3 bucket. An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
+You will require at least one **.json or .yaml (experimental)** CloudFormation template in your S3 bucket (other file-types are ignored). An example of this can be found in /Python/CloudFormation_Templates/basic_ec2_instance.json on [Github](https://github.com/capgemini-psdu/cloud-former-alexa/blob/master/cloud-former-lambda/Python/CloudFormation_Templates/basic_ec2_instance.json). This will launch a Linux EC2 instance within the Free Tier of AWS.
 
 Furthermore, you will need a file entitled 'contacts.csv', in the S3 bucket, in the format:
 
 ```
-john,+44XXXXXXXXXX
-bethany,+44XXXXXXXXXX
+john,+44XXXXXXXXXX,0
+bethany,+44XXXXXXXXXX,1
 ```
+
+The number at the end is the authentication level. *(In-development.)*
+
+* 0: Can create stacks only.
+* 1: Can create and delete stacks.
+* -1: Can neither create and delete stacks. This user has no authentication.
 
 **It is vital that the names match those on the 'Custom Slot Types' specified when setting up the Alexa Skill.**
 
@@ -286,7 +315,7 @@ The following assumes the invocation name is "Cloud".
 
 *	“Alexa, ask Cloud to…” for a specific question, or: “Alexa, launch Cloud” if you do not have a specific question.
 (You can invoke this at any time if the skill pauses, and it will remember where you left off.)
-*	To reset the conversation, say “Alexa, ask Cloud to reset skill.”
+*	To reset the conversation, say “Alexa, ask Cloud to reset conversation.”
 
 ### Creating a Stack
 

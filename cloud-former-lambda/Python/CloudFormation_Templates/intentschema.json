@@ -4,13 +4,31 @@
       "intent": "AMAZON.CancelIntent"
     },
     {
+      "intent": "HelpIntent",
+      "slots": [
+        {
+          "name": "topic",
+          "type": "topic"
+        }
+      ]
+    },
+    {
       "intent": "ResetSkill"
     },
     {
-      "intent": "AMAZON.HelpIntent"
+      "intent": "AMAZON.StopIntent"
     },
     {
-      "intent": "AMAZON.StopIntent"
+      "intent": "TemplateCount"
+    },
+    {
+      "intent": "TemplateName",
+      "slots": [
+        {
+          "name": "number",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
     },
     {
       "intent": "GetDateIntent"
@@ -53,6 +71,12 @@
       "intent": "TerminateInstance"
     },
     {
+      "slots": [
+        {
+          "name": "response",
+          "type": "response"
+        }
+      ],
       "intent": "RequestInstance"
     },
     {
@@ -80,6 +104,14 @@
         {
           "name": "user",
           "type": "user"
+        },
+        {
+          "name": "response",
+          "type": "response"
+        },
+        {
+          "name": "topic",
+          "type": "topic"
         }
       ],
       "intent": "UnknownRequest"
