@@ -156,7 +156,7 @@ This design approach allows for the developer to grant varying levels of access 
 
 ## License
 
-cloudformer-node npm package [forked](mikgan) | https://www.npmjs.com/package/cloudformer-node | MIT OpenLicense
+cloudformer-node npm package (Adapted for use with S3)(mikgan) | https://www.npmjs.com/package/cloudformer-node | MIT OpenLicense
 
 random-number npm package (ashnur) | https://www.npmjs.com/package/random-number | BSD 2-clause "Simplified" License
 
