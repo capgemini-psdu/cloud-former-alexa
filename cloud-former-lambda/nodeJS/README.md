@@ -2,20 +2,6 @@
 
 We have created a VoiceOps Skill which allows a user to deploy and manage CloudFormation Stacks from CloudFormation Templates within AWS just by speaking to Alexa; neat, right! :)
 
-Here is a list of functionality available from the CloudFormer skill.
-
- * __Create:__ Allows the user to create CloudFormation Stacks from templates stored within the specified S3 bucket, each CloudFormation template is associated with an option number which is provided to alexa when prompted on which stack the user would like to create.
- * __Delete:__ Allows the user to delete running CloudFormation Stacks that have been created by CloudFormer, simply provide alexa the option number associated with the CloudFormation template.
- * __Count:__ Returns a count of the number of templates stored within the specified S3 bucket.
- * __Option:__ Tells the user about the CloudFormation template name and details associated with each option number.
- * __Status:__ Provides the user with an overview of stacks currently residing in CloudFormation and their respective states (only those created by CloudFormer).
- * __List:__ Lists out every CloudFormation template in the S3 Bucket with their associated option number.
- * __Help:__ a basic help system used to get started with the skill.
-
-
-Simply ask "Alexa, ask cloud former for help" when speaking to an alexa enabled device, for further assistance with invocations.
-
-
 ## Prerequisites
 
 ### General 
@@ -29,19 +15,37 @@ Simply ask "Alexa, ask cloud former for help" when speaking to an alexa enabled 
  * A good understanding how JavaScript Promises work and by extenstion callback functions.
  * A good understanding how the following AWS resources work: CloudFormation, S3, Lambda.
 
-## Lambda Function Configuration
+## Overview of Functionality
+
+Here is a list of functionality available from the CloudFormer skill.
+
+ * __Create:__ Allows the user to create CloudFormation Stacks from templates stored within the specified S3 bucket, each CloudFormation template is associated with an option number which is provided to alexa when prompted on which stack the user would like to create.
+ * __Delete:__ Allows the user to delete running CloudFormation Stacks that have been created by CloudFormer, simply provide alexa the option number associated with the CloudFormation template.
+ * __Count:__ Returns a count of the number of templates stored within the specified S3 bucket.
+ * __Option:__ Tells the user about the CloudFormation template name and details associated with each option number.
+ * __Status:__ Provides the user with an overview of stacks currently residing in CloudFormation and their respective states (only those created by CloudFormer).
+ * __List:__ Lists out every CloudFormation template in the S3 Bucket with their associated option number.
+ * __Help:__ a basic help system used to get started with the skill.
+
+
+Simply ask "Alexa, ask cloud former for help" when speaking to an alexa enabled device, for further assistance with invocations.
+
+## Installation Guide
+If you would like to setup this skill please follow the steps outlined in the subsections below.
+
+### Lambda Function Configuration
 There are a few components that need to be configured to setup the code for Lambda
 
 Changes to the code are made in this file: __~/cloud-former-alexa/cloud-former-lambda/nodeJS/script.js__, unless specified otherwise.
 
-### Configuring the Application Id for the Alexa Skill
+#### Configuring the Application Id for the Alexa Skill
 
 You need to get the __Alexa Skill Application ID__ from the skill you will create in the next main step and assign it to the applicationId constant.
 ```
 const applicationId = 'amzn1.ask.skill.<ID>';
 ```
 
-### Configuring the authentication parameters
+#### Configuring the authentication parameters
 Located below is the code which can be configured to change the duration and range of the authentication code.
 
 ```
@@ -55,7 +59,7 @@ const authParams = {
 // The timeout count in seconds provided to the authentication key generated for valid users.
 const AUTH_TIMEOUT = 120;
 ```
-### Configuring the storage location within S3
+#### Configuring the storage location within S3
 Located below is the code which can be configured to change the location in which the CloudFormation Templates are stored in addition to access credentials.
 ```
 // The Region in which the bucket is placed within S3.
@@ -72,7 +76,7 @@ const userFolder = "users/";
 const userFile = userFolder + "access.json";
 ```
 
-### Access File Layout
+#### Access File Layout
 This file is to be stored in S3, in the path outlined by the constant: userFile, in the code snippet above.
 ```
 {
@@ -90,7 +94,7 @@ This file is to be stored in S3, in the path outlined by the constant: userFile,
 }
 ```
 
-### Lambda Function Creation
+#### Lambda Function Creation
 1. Navigate to the AWS Lambda Service on your AWS account.
 1. Select the "Create Function" button
 1. Select the "Author from scratch" in the "Select blueprint" section
@@ -106,10 +110,10 @@ This file is to be stored in S3, in the path outlined by the constant: userFile,
 __NOTE:__ Take a note of the ARN for the lambda function you created as you will need this for the next step.
 
 
-## Alexa Skill Creation
+### Alexa Skill Creation
 This section details how you would set up the Alexa skill for Cloud Former.
 
-### Configuring Skill Information
+#### Configuring Skill Information
 1. Login to your Amazon Developer account select Alexa
 1. Select "Get Started" which is located under the "Alexa Skills Kit" section.
 1. Select "Add a New Skill".
@@ -118,21 +122,21 @@ This section details how you would set up the Alexa skill for Cloud Former.
 1. Create a new Alexa Skill and name it "CloudFormer" and give it an invocation name of "cloud former".
 1. Select "No" for all Global Fields.
 
-### Building the Interaction Model
+#### Building the Interaction Model
 1. Select the Launch Skill Builder (Beta) button.
 1. Select </> Code Editor from left-hand menu and proceed to upload the file JSON interaction model located here: __~/cloud-former-alexa/alexa-skills-components/skill-builder.json__".
 1. Scroll down the left-hand menu and find the Slot Type called People, within this slot you will add the first names/nicknames (lowercase) of Users to which you will grant elevated privileges.
 1. Hit save and then build the model, this should take a few minutes.
 
-### Configuring Endpoints
+#### Configuring Endpoints
 1. Select __AWS Lambda ARN__ for the service endpoint.
 1. Select a geographical region (or both).
 1. Enter the Application Resource Name (ARN) of the lambda function you created in the previous main step.
 1. Select __No__ for Account linking and then leave everything else unchecked.
 
-## API Reference
+### API Reference
 
-### Authentication Wrapper
+#### Authentication Wrapper
 
 Authentication wrapper is wrapped around any code that requires authenticating. Authentication works by sending an authorised user a OTP (One Time Password).
 You will need to add the user to the access.json file in your s3 bucket for this to work.
@@ -176,7 +180,7 @@ This design approach allows for the developer to grant varying levels of access 
       }
   );
 }
-````
+```
 
 Removing authentication from an intent is very easy.
   * __CODE:__ Remove the authentication wrapper and both functions leaving behind the code in the "Authentication Successful" function.   
@@ -184,14 +188,14 @@ Removing authentication from an intent is very easy.
   * __ALEXA SKILL:__ Remove the __Users__ slot and __AuthKey__ slot from the skill, in addition to any utterances which require them.
 
 
-## Contributors
-* Rushil Soni - Software Engineer
+### Contributors
+* Rushil Soni - Software Engineer | Skill Developer
 * Nagaraj Govindaraj - CloudFormation Templates
 
-### Author
-* Rushil Soni
+#### Author
+Rushil Soni
 
-## License
+### License
 
 cloudformer-node npm package (Adapted for use with S3)(mikgan) | https://www.npmjs.com/package/cloudformer-node | MIT OpenLicense
 
