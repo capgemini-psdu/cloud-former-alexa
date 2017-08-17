@@ -185,7 +185,7 @@ This design approach allows for the developer to grant varying levels of access 
 Removing authentication from an intent is very easy.
   * __CODE:__ Remove the authentication wrapper and both functions leaving behind the code in the "Authentication Successful" function.   
   * __CODE:__ Remove any slot elicitations before the authentication wrapper which require the user give their name to Alexa.
-  * __ALEXA SKILL:__ Remove the __Users__ slot and __AuthKey__ slot from the skill, in addition to any utterances which require them.
+  * __ALEXA SKILL:__ Remove the __Users__ and __AuthKey__ slots from the skill, in addition to any utterances which require them.
 
 
 ### Contributors
