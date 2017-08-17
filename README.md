@@ -9,7 +9,7 @@ capable of managing and creating Cloud Infrastruture within AWS.
 We've also written a [blog](https://www.google.com) about our time at the company and the processes we followed to complete this project
 
 + __Jordan Lindsey__ | __Robotics Intern__ 
-+ __Nagaraj Govindraj__ | __DevOps Engineer Intern__ [LinkedIn](https://www.linkedin.com/in/nagaraj-g-b1081a18/) | [GitHub Account](https://github.com/nagaraj07/)
++ __Nagaraj Govindraj__ | __DevOps Engineer Intern__ | [LinkedIn](https://www.linkedin.com/in/nagaraj-g-b1081a18/) | [GitHub Account](https://github.com/nagaraj07/)
 + __Rushil Soni__ | __DevOps Engineer Intern__ | [LinkedIn](https://uk.linkedin.com/in/rushil-soni-53a953120) | [GitHub Account](https://github.com/retrofy)
 + __Sara Jebril__ | __Solutions Architecture Intern__ 
 
